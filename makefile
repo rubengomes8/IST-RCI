@@ -1,6 +1,3 @@
-CC=gcc
-CFLAGS = -g -Wall
-
-iamroot: tcp.c udp.c utils.c
-	$(CC) -o iamroot iamroot.c
+iamroot: iamroot.c utils.c tcp.c udp.c	
+	gcc -g iamroot.c utils.c tcp.c udp.c -o iamroot
 

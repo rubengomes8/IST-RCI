@@ -5,4 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
+int count_specific_char(char *string, char ch);
+
 #endif //UTILS_UTILS_H

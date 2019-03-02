@@ -92,3 +92,19 @@ void print_sender(struct sockaddr_in addr, unsigned int addrlen, int flags)
         printf("Sent by [%s:%s]\n", host, service);
     }
 }
+
+
+//A partir daqui são funções do udp_server.c
+
+void udp_bind(int fd, struct addrinfo *res)
+{
+    int n;
+
+    //Serve para registar o nome do servidor e a porta, associando-os ao socket apontado por fd
+    n = bind(fd, res->ai_addr, res->ai_addrlen);
+    if(n == -1)
+    {
+        fprintf(stderr, "Error: bind: %s\n", strerror(errno));
+        exit(1);
+    }
+}
