@@ -74,7 +74,7 @@ int udp_receive(int fd, int *msg_len, char* buffer, int flags, struct sockaddr_i
   *msg_len = n;
   *addr = addr_aux;
 
-	return n;
+  return n;
 }
 
 
