@@ -97,7 +97,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     if(flag_d)
     {
-        printf("Received by Root Server: %s\n", msg);
+        printf("Mensagem recebida pelo servidor de raízes: %s\n", msg);
     }
 
     return msg;

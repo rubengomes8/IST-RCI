@@ -45,8 +45,17 @@ int main(int argc, char *argv[])
     struct addrinfo *res_rs;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    ////////////////////////////////// Comunicação com o servidor fonte ////////////////////////////////////////////////
-    int fd_source_server;
+
+    ///////////////////////////// Comunicação com o servidor de raízes /////////////////////////////////////////////////
+    int fd_ss;
+    struct addrinfo *res_ss;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	///////////////////////////// Śervidor TCP - aceita conexões a jusante /////////////////////////////////////////////
+    int fd_tcp;
+    struct addrinfo *res_tcp;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     char buffer[BUFFER_SIZE];
@@ -77,7 +86,7 @@ int main(int argc, char *argv[])
 
         if(!strcmp(msg, "ERROR")) //Recebeu Error
         {
-            printf("Make sure the stream ID, the IPaddress and the port UDP are well formated\n");
+            printf("Verifique que o identificador da stream está corretamente formatado\n");
             exit(-1);
         }
         else
@@ -90,8 +99,7 @@ int main(int argc, char *argv[])
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
 
                 //1. Estabelecer sessão TCP com o servidor fonte
-                fd_source_server = tcp_socket_connect(); //Não sei que IP pôr aqui
-
+            	//fd_ss = tcp_socket_connect(streamIP, streamPORT);
                 //2. instalar servidor TCP para o ponto de acesso a jusante
 
                 //3. instalar o servidor UDP de acesso de raiz
