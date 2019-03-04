@@ -10,11 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1cbc23ac-d573-4c7e-8c02-2d8876fde908" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/iamroot" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot.c" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iamroot.o" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/makefile" beforeDir="false" afterPath="$PROJECT_DIR$/makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.o" beforeDir="false" afterPath="$PROJECT_DIR$/utils.o" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,8 +23,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/iamroot.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="54" lean-forward="true" selection-start-line="54" selection-end-line="54" />
+            <state relative-caret-position="274">
+              <caret line="92" column="82" selection-start-line="92" selection-start-column="82" selection-end-line="92" selection-end-column="82" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
               </folding>
@@ -171,12 +167,12 @@
       <option name="presentableId" value="Default" />
       <updated>1551556838899</updated>
       <workItem from="1551556840257" duration="2819000" />
-      <workItem from="1551643700542" duration="13551000" />
+      <workItem from="1551643700542" duration="14175000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="16370000" />
+    <option name="totallyTimeSpent" value="16994000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
@@ -266,8 +262,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/iamroot.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="54" lean-forward="true" selection-start-line="54" selection-end-line="54" />
+        <state relative-caret-position="274">
+          <caret line="92" column="82" selection-start-line="92" selection-start-column="82" selection-end-line="92" selection-end-column="82" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
           </folding>
