@@ -95,3 +95,147 @@ int tcp_receive(int nbytes, char *ptr, int fd)
   nread = nbytes - nleft;
   return nread;
 }
+
+ ///////////////////////////// Funções do servidor TCP /////////////////////////////////////////////////
+
+
+int tcp_bind(char *service)
+{
+    struct addrinfo hints, *res;
+    int n;
+    int fd;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET; //IPv4
+    hints.ai_socktype = SOCK_STREAM; //TCP socket
+    hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+
+    n = getaddrinfo(NULL, service, &hints, &res);
+    if(n!=0)
+    {
+        fprintf(stderr, "Error: getaddrinfo: %s\n", gai_strerror(n));
+        exit(1);
+    }
+
+    fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if(fd == -1)
+    {
+        fprintf(stderr, "Error: socket: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    n = bind(fd, res->ai_addr, res->ai_addrlen);
+    if(n == -1)
+    {
+        fprintf(stderr, "Error: bind: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    n = listen(fd, MAX_CONNECTIONS_PENDING);
+    if(n == -1)
+    {
+        fprintf(stderr, "Error: listen: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    freeaddrinfo(res);
+
+    return fd;
+}
+
+int *fd_array_init()
+{
+    int *fd_array;
+    int i;
+
+    fd_array = (int *)malloc(sizeof(int)*MAX_CONNECTIONS);
+    if(fd_array == NULL)
+    {
+        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    for(i = 0; i<MAX_CONNECTIONS; i++)
+    {
+        fd_array[i] = -1;
+    }
+
+    return fd_array;
+}
+
+void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd)
+{
+    int i;
+
+    //Faz set de todos os file descriptors diferentes de -1
+    for(i=0; i<MAX_CONNECTIONS; i++)
+    {
+        if(fd_array[i] != -1)
+        {
+            FD_SET(fd_array[i], fdSet);
+            *maxfd = max(*maxfd, fd_array[i]);
+        }
+    }
+}
+
+void new_connection(int fd, int *fd_array)
+{
+    struct sockaddr_in addr;
+    unsigned int addrlen;
+    enum {accepted, refused} state;
+    int newfd, i;
+
+    //À falta de indicação em contrário, a ligação é recusada
+    state = refused;
+
+    addrlen = sizeof(addr);
+    //Recebe um novo pedido de ligação
+    if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
+        fprintf(stderr, "Error: accept: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    for(i=0; i<MAX_CONNECTIONS; i++)
+    {
+        if(fd_array[i] == -1)
+        {
+            fd_array[i] = newfd;
+            state = accepted;
+            break;
+        }
+    }
+
+    //Se a ligação for recusada, envia uma mensagem ao cliente a informar
+    if(state == refused)
+    {
+        write(newfd, "Busy\n", 6);
+        close(newfd);
+    }
+}
+
+void tcp_echo_communication(int *fd_array, char *buffer, int i)
+{
+    int n;
+
+    if((n = read(fd_array[i], buffer, BUFFER_SIZE)) != 0)
+    {
+        //Caso haja um erro de leitura imprime o erro no ecrã e fecha a ligação
+        if(n == -1)
+        {
+            fprintf(stderr, "Error: read: %s\n", strerror(errno));
+            close(fd_array[i]);
+            fd_array[i] = -1;
+        }
+        else
+        {
+            //Caso não haja nenhum erro, envia a mensagem
+            write(fd_array[i], buffer, n);
+        }
+    }
+    else
+    {
+        //Se o valor retornado por read for 0, a ligação foi fechada pelo peer
+        close(fd_array[i]);
+        fd_array[i] = -1;
+    }
+}
