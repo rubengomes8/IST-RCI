@@ -12,6 +12,6 @@
 //Este .c e .h implementam a comunicação com o servidor de raízes
 
 void dump(int fd_rs, struct addrinfo *res_rs);
-char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport);
+char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport);
 
 #endif //RCI_ROOT_SERVER_H

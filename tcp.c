@@ -1,5 +1,8 @@
 #include "tcp.h"
 
+extern int flag_d;
+extern int flag_b;
+
 //Recebe host:service e retorna file descriptor do socket
 int tcp_socket_connect(char *host, char *service)
 {
@@ -12,21 +15,21 @@ int tcp_socket_connect(char *host, char *service)
   hints.ai_flags = AI_NUMERICSERV;
 
   n = getaddrinfo(host, service, &hints, &res);
-  if(n != 0)
+  if(n != 0 && flag_d)
   {
     fprintf(stderr, "Error: getaddrinfo: %s\n", gai_strerror(n));
     exit(1);
   }
 
   fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  if(fd == -1)
+  if(fd == -1 && flag_d)
   {
     fprintf(stderr, "Error: socket: %s\n", strerror(errno));
     exit(1);
   }
 
   n = connect(fd, res->ai_addr, res->ai_addrlen);
-  if(n == -1)
+  if(n == -1 && flag_d)
   {
     fprintf(stderr, "Error: connect: %s\n", strerror(errno));
     exit(1);
@@ -143,19 +146,19 @@ int tcp_bind(char *service)
     return fd;
 }
 
-int *fd_array_init()
+int *fd_array_init(int tcp_sessions)
 {
     int *fd_array;
     int i;
 
-    fd_array = (int *)malloc(sizeof(int)*MAX_CONNECTIONS);
-    if(fd_array == NULL)
+    fd_array = (int *)malloc(sizeof(int)*tcp_sessions);
+    if(fd_array == NULL && flag_d)
     {
         fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
         exit(1);
     }
 
-    for(i = 0; i<MAX_CONNECTIONS; i++)
+    for(i = 0; i<tcp_sessions; i++)
     {
         fd_array[i] = -1;
     }

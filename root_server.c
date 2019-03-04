@@ -51,13 +51,14 @@ void dump(int fd_rs, struct addrinfo *res_rs)
     free(msg);
 }
 
-char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport)
+char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport)
 {
     int msg_len;
     struct sockaddr_in addr;
     unsigned int addrlen;
     int n;
     char *msg;
+    char *msg2;
 
     addrlen = sizeof(addr);
 
@@ -70,7 +71,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     }
 
     //Composição da mensagem a ser enviada
-    sprintf(msg, "WHOISROOT %s %s:%s\n", streamID, rsaddr, rsport);
+    sprintf(msg, "WHOISROOT %s %s:%s\n", streamID, ipaddr, uport);
     msg_len = strlen(msg);
 
     if(flag_d)
@@ -82,8 +83,8 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     udp_send(fd_rs, msg, msg_len, 0, res_rs);
     free(msg);
 
-    msg = (char*) malloc(sizeof(char)*RIS_LEN);
-    if(msg == NULL && flag_d == 1)
+    msg2 = (char*) malloc(sizeof(char)*RIS_LEN);
+    if(msg2 == NULL && flag_d == 1)
     {
         fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
         exit(-1);
@@ -93,13 +94,13 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     n = RIS_LEN; //Máximo comprimento da mensagem que pode receber
 
     //Recebe como resposta ROOTIS - 100 ou URROOT - 82
-    n = udp_receive(fd_rs, &n, msg, 0, &addr, &addrlen);
+    n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
 
     if(flag_d)
     {
-        printf("Mensagem recebida pelo servidor de raízes: %s\n", msg);
+        printf("Mensagem recebida pelo servidor de raízes: %s\n", msg2);
     }
 
-    return msg;
+    return msg2;
 }
 

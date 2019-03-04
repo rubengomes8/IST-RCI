@@ -22,15 +22,15 @@ CFLAGS  = -g -Wall
 default: iamroot
 
 # To create the executable file iamroot we need the object files
-# iamroot.o, udp.o, tcp.o and utils.o:
+# iamroot.o, udp.o, tcp.o, utils.o and interface.o:
 #
-iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o
-	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o
+iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o
+	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o
 
 # To create the object file iamroot.o, we need the source
-# files iamroot.c, udp.h, tcp.h and utils.h:
+# files iamroot.c, udp.h, tcp.h, utils.h and interface,h:
 #
-iamroot.o:  iamroot.c tcp.h udp.h utils.h
+iamroot.o:  iamroot.c tcp.h udp.h utils.h interface.h
 	$(CC) $(CFLAGS) -c iamroot.c
 
 # To create the object file udp.o, we need the source files
@@ -42,7 +42,7 @@ udp.o:  udp.c udp.h
 # To create the object file tcp.o, we need the source files
 # tcp.c and tcp.h:
 #
-tcp.o:  tcp.c tcp.h
+tcp.o:  tcp.c tcp.h utils.h
 	$(CC) $(CFLAGS) -c tcp.c
 
 # To create the object file utils.o, we need the source files
@@ -56,6 +56,12 @@ utils.o:  utils.c utils.h
 #
 root_server.o:  root_server.c root_server.h udp.h
 	$(CC) $(CFLAGS) -c root_server.c
+
+# To create the object file interface.o, we need the source files
+# interface.c and interface.h:
+#
+interface.o:  interface.c interface.h utils.h
+	$(CC) $(CFLAGS) -c interface.c
 
 # To start over from scratch, type 'make clean'.  This
 # removes the executable file, as well as old .o object

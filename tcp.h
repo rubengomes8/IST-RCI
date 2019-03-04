@@ -15,13 +15,14 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include "utils.h"
 
 int tcp_socket_connect(char *host, char *service);
 void tcp_send(int nbytes, char *ptr, int fd);
 int tcp_receive(int nbytes, char *ptr, int fd);
 
 int tcp_bind(char *service);
-int *fd_array_init();
+int *fd_array_init(int tcp_sessions);
 void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd);
 void new_connection(int fd, int *fd_array);
 void tcp_echo_communication(int *fd_array, char *buffer, int fd_index);
