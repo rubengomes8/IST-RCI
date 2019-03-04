@@ -5,20 +5,14 @@ extern int flag_b;
 
 void dump(int fd_rs, struct addrinfo *res_rs)
 {
-    char *msg;
+    char msg[DUMP_LEN];
     int msg_len;
     struct sockaddr_in addr;
     unsigned int addrlen;
     int n;
+    char msg2[STREAMS_LEN];
 
     addrlen = sizeof(addr);
-
-    msg = (char*) malloc(sizeof(char)*DUMP_LEN);
-    if(msg == NULL && flag_d == 1)
-    {
-        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-        exit(-1);
-    }
 
     sprintf(msg, "DUMP\n");
     msg_len = strlen(msg);
@@ -30,25 +24,14 @@ void dump(int fd_rs, struct addrinfo *res_rs)
     }
 
     udp_send(fd_rs, msg, msg_len, 0, res_rs);
-    free(msg);
-
-    msg = (char*) malloc(sizeof(char)*STREAMS_LEN);
-    if(msg == NULL && flag_d == 1)
-    {
-        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-        exit(-1);
-    }
-
 
     n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
-    n = udp_receive(fd_rs, &n, msg, 0, &addr, &addrlen);
+    n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
 
     if(flag_d)
     {
         printf("Received by Root Server: %s\n", msg);
     }
-
-    free(msg);
 }
 
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport)
@@ -102,5 +85,25 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     }
 
     return msg2;
+}
+
+void popreq(int fd_udp, struct addrinfo *res_udp)
+{
+    char msg[POPREQ_LEN];
+    int msg_len = POPREQ_LEN;
+
+    sprintf(msg, "POPREQ\n");
+
+    if(flag_d)
+    {
+        printf("A comunicar com o servidor de acesso...\n");
+    }
+
+    udp_send(fd_udp, msg, msg_len, 0, res_udp);
+
+    if(flag_d)
+    {
+        printf("Mensagem enviada: %s\n", msg);
+    }
 }
 

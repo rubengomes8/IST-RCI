@@ -6,6 +6,7 @@
 #define WIR_LEN 103 //whoisroot length 9+1+64+1+20+1+6+1=103
 #define RIS_LEN 100 //rootis length 6+1+64+1+20+1+6+1=100
 #define URR_LEN 82 //urroot length 6+1+64+1=82
+#define POPREQ_LEN 7 //comprimento da mensagem POPREQ
 
 #include "udp.h"
 
@@ -13,5 +14,6 @@
 
 void dump(int fd_rs, struct addrinfo *res_rs);
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport);
+void popreq(int fd_udp, struct addrinfo *res_udp);
 
 #endif //RCI_ROOT_SERVER_H

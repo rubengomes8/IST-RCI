@@ -166,20 +166,11 @@ int main(int argc, char *argv[])
                 }
                 strcpy(rasport, token);
 
-                printf("rasaddr: %s\n", rasaddr);
-                printf("rasport: %s\n", rasport);
-
-
-
-
-
                 //caso já exista uma raiz associada à stream, a aplicação deverá
-
-
-
-
                 //1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso
+                fd_udp = udp_socket(rasaddr, rasport, &res_udp);
 
+                popreq(fd_udp);
 
 
 
