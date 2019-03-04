@@ -45,8 +45,6 @@ int main(int argc, char *argv[])
     struct addrinfo *res_rs;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    ////////////////////////////////// Comunicação com o servidor fonte ////////////////////////////////////////////////
-    int fd_source_server;
 
 
     char buffer[BUFFER_SIZE];
@@ -77,7 +75,7 @@ int main(int argc, char *argv[])
 
         if(!strcmp(msg, "ERROR")) //Recebeu Error
         {
-            printf("Make sure the stream ID, the IPaddress and the port UDP are well formated\n");
+            printf("Verifique que o identificador da stream está corretamente formatado\n");
             exit(-1);
         }
         else
@@ -90,7 +88,6 @@ int main(int argc, char *argv[])
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
 
                 //1. Estabelecer sessão TCP com o servidor fonte
-                fd_source_server = tcp_socket_connect(); //Não sei que IP pôr aqui
 
                 //2. instalar servidor TCP para o ponto de acesso a jusante
 
