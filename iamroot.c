@@ -1,6 +1,7 @@
 #include "udp.h"
 #include "tcp.h"
 #include "utils.h"
+#include "root_server.h"
 
 
 
@@ -9,11 +10,8 @@
 
 #define RS_IP "193.136.138.142"
 #define RS_PORT "59000"
-#define WIR_LEN 103 //whoisroot length 9+1+64+1+20+1+6+1=103
-#define RIS_LEN 100 //rootis length 6+1+64+1+20+1+6+1=100
-#define URR_LEN 82 //urroot length 6+1+64+1=82
-#define DUMP_LEN 5
-#define STREAMS_LEN 10000 //valor arbitrário para o comprimento da mensagem STREAMS, recebida pelo servidor de raízes
+
+
 
 //Vamos precisar de as usar várias vezes, por isso defini como variáveis globais
 int flag_b = 1; //apresenta os dados da stream na interface quando está a 1
@@ -49,21 +47,12 @@ int main(int argc, char *argv[])
 
 
 
-
-
-
-
-    int n = 0, i = 0;
-
     char buffer[BUFFER_SIZE];
-    char *token;
 
 	char rasaddr[20]; //endereço IP do servidor de acesso da raiz
 	char rasport[6]; //porto UDP do servidor de acesso da raiz
 	char *msg = NULL;
-	int msg_len;
-	struct sockaddr_in addr;
-	unsigned int addrlen;
+
 
 	//Verifica se a stream foi especificada e se é válida
     has_stream = validate_stream(argc, argv[1], streamID, streamNAME, streamIP, streamPORT);
@@ -82,48 +71,9 @@ int main(int argc, char *argv[])
 
     if(has_stream)
     {
-        //solicitar ao root_server o endereço IP e porto UDP do root_access_server associado ao streamID
-        msg = (char*) malloc(sizeof(char)*WIR_LEN);
-        if(msg == NULL && flag_d == 1)
-        {
-            fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-            exit(-1);
-        }
+        msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport);
 
-        //Composição da mensagem a ser enviada
-        sprintf(msg, "WHOISROOT %s %s:%s\n", streamID, rsaddr, rsport);
-        msg_len = strlen(msg);
-
-        if(flag_d)
-        {
-            printf("A comunicar com o servidor de raízes...\n");
-            printf("Mensagem enviada: %s\n", msg);
-        }
-
-        udp_send(fd_rs, msg, msg_len, 0, res_rs);
-        free(msg);
-
-        msg = (char*) malloc(sizeof(char)*RIS_LEN);
-        if(msg == NULL && flag_d == 1)
-        {
-            fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-            exit(-1);
-        }
-
-
-        n = RIS_LEN; //Máximo comprimento da mensagem que pode receber
-
-        //Recebe como resposta ROOTIS - 100 ou URROOT - 82
-        n = udp_receive(fd_rs, &n, msg, 0, &addr, &addrlen);
-
-        if(flag_d)
-        {
-            printf("Received by Root Server: %s\n", msg);
-        }
-
-        //print_sender(addr, addrlen, 0);
-
-        if(!strcmp(buffer, "ERROR")) //Recebeu Error
+        if(!strcmp(msg, "ERROR")) //Recebeu Error
         {
             printf("Make sure the stream ID, the IPaddress and the port UDP are well formated\n");
             exit(-1);
@@ -160,42 +110,10 @@ int main(int argc, char *argv[])
     }
     else
     {
-        msg = (char*) malloc(sizeof(char)*DUMP_LEN);
-        if(msg == NULL && flag_d == 1)
-        {
-            fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-            exit(-1);
-        }
-
-        sprintf(msg, "DUMP\n");
-        msg_len = strlen(msg);
-
-        if(flag_d)
-        {
-            printf("A comunicar com o servidor de raízes...\n");
-            printf("Mensagem enviada: %s\n", msg);
-        }
-
-        udp_send(fd_rs, msg, msg_len, 0, res_rs);
-        free(msg);
-
-        msg = (char*) malloc(sizeof(char)*STREAMS_LEN);
-        if(msg == NULL && flag_d == 1)
-        {
-            fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-            exit(-1);
-        }
-
-
-        n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
-        n = udp_receive(fd_rs, &n, msg, 0, &addr, &addrlen);
-
-        if(flag_d)
-        {
-            printf("Received by Root Server: %s\n", msg);
-        }
-
+        dump(fd_rs, res_rs);
     }
     close(fd_rs);
 
 }
+
+

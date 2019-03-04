@@ -24,8 +24,8 @@ default: iamroot
 # To create the executable file iamroot we need the object files
 # iamroot.o, udp.o, tcp.o and utils.o:
 #
-iamroot:  iamroot.o udp.o tcp.o utils.o
-	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o
+iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o
+	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o
 
 # To create the object file iamroot.o, we need the source
 # files iamroot.c, udp.h, tcp.h and utils.h:
@@ -50,6 +50,12 @@ tcp.o:  tcp.c tcp.h
 #
 utils.o:  utils.c utils.h
 	$(CC) $(CFLAGS) -c utils.c
+
+# To create the object file root_server.o, we need the source files
+# root_server.c and root_server.h:
+#
+root_server.o:  root_server.c root_server.h udp.h
+	$(CC) $(CFLAGS) -c root_server.c
 
 # To start over from scratch, type 'make clean'.  This
 # removes the executable file, as well as old .o object
