@@ -30,7 +30,7 @@ void dump(int fd_rs, struct addrinfo *res_rs)
 
     if(flag_d)
     {
-        printf("Received by Root Server: %s\n", msg);
+        printf("Received by Root Server: %s\n", msg2);
     }
 }
 
@@ -81,16 +81,36 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     if(flag_d)
     {
-        printf("Mensagem recebida pelo servidor de raízes: %s\n", msg2);
+        printf("Mensagem recebida do servidor de raízes: %s\n", msg2);
     }
 
     return msg2;
 }
 
-void popreq(int fd_udp, struct addrinfo *res_udp)
+void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID)
+{
+    char msg[REMOVE_LEN];
+    int msg_len = REMOVE_LEN;
+
+    sprintf(msg, "REMOVE %s\n", streamID);
+
+    udp_send(fd_rs, msg, msg_len, 0, res_rs);
+}
+
+
+//////////////////////////////////////// Servidor de Acesso ////////////////////////////////////////////////////////////
+
+void popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport)
 {
     char msg[POPREQ_LEN];
     int msg_len = POPREQ_LEN;
+    char msg_rcv[POPRESP_LEN];
+    int msg_rcv_len = POPRESP_LEN;
+    struct sockaddr_in addr;
+    unsigned int addrlen;
+    char *token = NULL;
+
+    addrlen = sizeof(addr);
 
     sprintf(msg, "POPREQ\n");
 
@@ -104,6 +124,78 @@ void popreq(int fd_udp, struct addrinfo *res_udp)
     if(flag_d)
     {
         printf("Mensagem enviada: %s\n", msg);
+    }
+
+    //Recebe a resposta POPRESP
+    msg_rcv_len = udp_receive(fd_udp, &msg_rcv_len, msg_rcv, 0, &addr, &addrlen);
+
+    if(flag_d)
+    {
+        printf("Mensagem recebida do servidor de acesso: %s\n", msg_rcv);
+    }
+
+    //Extraccção de pop_addr e pop_tport da mensagem recebida msg_rcv
+    token = strtok(msg_rcv, " ");
+    token = strtok(NULL, " ");
+    token = strtok(NULL, ":");
+    if(token == NULL && flag_d)
+    {
+        printf("ipaddr inválido!\n");
+        exit(1);
+    }
+    strcpy(pop_addr, token);
+
+    token = strtok(NULL, "\n");
+    if(token == NULL && flag_d)
+    {
+        printf("tport inválido!\n");
+        exit(1);
+    }
+
+    strcpy(pop_tport, token);
+}
+
+void popresp(int fd_udp, char *streamID)
+{
+    char msg[POPREQ_LEN];
+    int msg_len = POPREQ_LEN;
+    char msg2[POPRESP_LEN];
+    int msg_len2 = POPRESP_LEN;
+    struct sockaddr_in addr;
+    unsigned int addrlen;
+
+    addrlen = sizeof(addr);
+
+    //Recebe um POPREQ
+    msg_len = udp_receive(fd_udp, &msg_len, msg, 0, &addr, &addrlen);
+
+    if(flag_d)
+    {
+        printf("Mensagem recebida de um cliente iamroot: %s\n", msg);
+    }
+
+    printf("msg: %s\n", msg);
+    if(strcmp(msg, "POPREQ\n") != 0 && flag_d)
+    {
+        printf("Mensagem inválida!\n");
+        return;
+    }
+
+    //Chamar função para procurar pontos de ligação
+
+    sprintf(msg2, "POPRESP %s %s:%s\n", streamID, "ip_teste", "teste");
+
+    if(flag_d)
+    {
+        printf("A comunicar com o novo cliente iamroot...\n");
+    }
+
+    msg_len2 = strlen(msg2);
+    udp_answer(fd_udp, msg2, msg_len2, 0, (struct sockaddr *)&addr, addrlen);
+
+    if(flag_d)
+    {
+        printf("Mensagem enviada ao novo cliente iamroot: %s\n", msg2);
     }
 }
 

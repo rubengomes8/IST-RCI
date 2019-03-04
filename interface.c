@@ -33,7 +33,7 @@ void interface(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, 
 
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
-
+            popresp(fd_udp, streamID);
         }
         else if(FD_ISSET(0, &fd_read_set))
         {

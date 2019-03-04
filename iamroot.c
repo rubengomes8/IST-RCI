@@ -44,13 +44,13 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////// Comunicação com o servidor de raízes /////////////////////////////////////////////////
-    int fd_rs;
+    int fd_rs = -1;
     struct addrinfo *res_rs = NULL;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     ///////////////////////////// Comunicação com o servidor de raízes /////////////////////////////////////////////////
-    int fd_ss;
+    int fd_ss = -1;
     struct addrinfo *res_ss = NULL;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -62,20 +62,26 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////// Servidor UDP de acesso ////////////////////////////////////////////////////////
-    int fd_udp;
+    int fd_udp = -1;
     struct addrinfo *res_udp = NULL;
     char rasaddr[IP_LEN + 1]; //endereço IP do servidor de acesso da raiz
     char rasport[PORT_LEN + 1]; //porto UDP do servidor de acesso da raiz
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+    //////////////////////////////////// Comunicação com par a montante ////////////////////////////////////////////////
+    char pop_tport[PORT_LEN];
+    char pop_addr[IP_LEN];
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
     char buffer[BUFFER_SIZE];
 
+    int is_root = 0;
 
 	char *msg = NULL;
-	char *token;
+	char *token = NULL;
 
 
 	//Verifica se a stream foi especificada e se é válida
@@ -111,6 +117,7 @@ int main(int argc, char *argv[])
             buffer[6] = '\0';
             if(!strcmp(buffer, "URROOT"))
             {
+                is_root = 1;
 
                 //caso não haja nenhuma raiz associada ao streamID
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
@@ -141,7 +148,7 @@ int main(int argc, char *argv[])
                 udp_bind(fd_udp, res_udp);
 
                 //4. executar a interface de utilizador
-                interface(fd_rs, res_rs, streamID, 1, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
+                interface(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -158,7 +165,7 @@ int main(int argc, char *argv[])
                 }
                 strcpy(rasaddr, token);
 
-                token = strtok(NULL, ":");
+                token = strtok(NULL, "\n");
                 if(token == NULL && flag_d)
                 {
                     printf("uport inválido!\n");
@@ -170,18 +177,17 @@ int main(int argc, char *argv[])
                 //1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso
                 fd_udp = udp_socket(rasaddr, rasport, &res_udp);
 
-                popreq(fd_udp);
+                popreq(fd_udp, res_udp, pop_addr, pop_tport);
 
-
+                printf("pop_addr %s\n", pop_addr);
+                printf("pop_tport %s\n", pop_tport);
 
                 //2. estabelecer sessão TCP com o ponto de acesso
 
                 //3. aguardar confirmação de adesão
 
             }
-
             free(msg);
-
         }
     }
     else
@@ -198,12 +204,16 @@ int main(int argc, char *argv[])
         freeaddrinfo(res_udp);
     }
 
-    close(fd_udp);
-    close(fd_rs);
-    close(fd_tcp_server);
-    close(fd_ss);
-    free(fd_array);
+    if(is_root)
+    {
+        remove_stream(fd_rs, res_rs, streamID);
+    }
 
+    if(fd_udp != -1) close(fd_udp);
+    if(fd_rs != -1) close(fd_rs);
+    if(fd_tcp_server != -1) close(fd_tcp_server);
+    if(fd_ss != -1) close(fd_ss);
+    if(fd_array != NULL) free(fd_array);
 }
 
 

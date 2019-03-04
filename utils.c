@@ -122,7 +122,7 @@ int validate_stream(int argc, char *argv1, char* streamID, char* streamNAME, cha
 
 void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], char tport[], char uport[], char rsaddr[], char rsport[], int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h){
 	int i=0, n=0;
-	char *token;
+	char *token = NULL;
 
 	//Validação dos argumentos com base no seu número
 /*	if(has_stream == 1 && argc%2 != 0)

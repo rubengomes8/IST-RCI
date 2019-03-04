@@ -110,3 +110,15 @@ void udp_bind(int fd, struct addrinfo *res)
     exit(1);
   }
 }
+
+void udp_answer(int fd, char* msg, int msg_len, int flags, struct sockaddr *addr, int addrlen)
+{
+  int n;
+
+  n = sendto(fd, msg, msg_len, flags, addr, addrlen);
+  if(n == -1)
+  {
+    fprintf(stderr, "Error: sendto: %s\n", strerror((errno)));
+    exit(1);
+  }
+}
