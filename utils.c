@@ -3,6 +3,30 @@
 extern int flag_b;
 extern int flag_d;
 
+
+void sinopse(){
+	printf("A aplicação iamroot é invocada da seguinte forma:\n\n");
+	printf("./iamroot [<streamID>] [-i <ipaddr>] [-t <tport>] [-u <uport>]\n");
+	printf("[-s <rsaddr>[:<rsport>]] [-p <tcpsessions>] [-n <bestpops>] [-x <tsecs>]\n");
+	printf("[-b] [-d] [-h]\n\n");
+
+	printf("+------------------------------------------------------------------------------------------------------------------+\n");
+	printf("| <streamID>: identificação da stream <nome>:<source_ipaddr>:<source_tport>                                        |\n");
+	printf("| <ipaddr>: endereço IP da interface de rede usada pela aplicação                                                  |\n");
+	printf("| <tport>: porto TCP onde a aplicação aceita sessões de outros pares a jusante (58000 por omissão)                 |\n");
+	printf("| <uport>: porto UDP do servidor de acesso (58000 por omissão)                                                     |\n");
+	printf("| <rsaddr>: endereço IP do servidor de raízes (193.136.138.142 por omissão)                                        |\n");
+	printf("| <rsport>: porto UDP do servidor de raízes (59000 por omissão)                                                    |\n");
+	printf("| <tcpsessions>: nº de sessões TCP que a aplicação aceitará para ligação de pares a jusante (>=1)                  |\n");
+	printf("| <bestpops>: nº de pontos de acesso a recolher por esta aplicação, quando raiz, durante a descoberta de pops (>=1)|\n");
+	printf("| <tsecs>: período em segundos associado ao registo periódico que a raiz fará no servidor de raízes (5 por omissão)|\n");
+	printf("| -b: desativa a apresentação de dados do stream na interface                                                      |\n");
+	printf("| -d: usada para a aplicação apresentar informação detalhada do seu funcionamento                                  |\n");
+	printf("| -h: força a aplicação a apresentar a sinopse da linha de comandos                                                |\n");
+	printf("+------------------------------------------------------------------------------------------------------------------+\n");
+
+}
+
 int count_specific_char(char *string, char ch){
 	int count = 0;
 	int i;

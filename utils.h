@@ -18,9 +18,10 @@
 #include <stdio.h>
 
 
-
+void sinopse();
 int count_specific_char(char *string, char ch);
 void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], char tport[], char uport[], char rsaddr[], char rsport[], int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h);
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
+
 
 #endif //UTILS_UTILS_H

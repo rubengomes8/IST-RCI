@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
     if(flag_h == 1)
     {
-        //Apresenta a sinopse da linha de comandos e sai do programa
+        sinopse();
         exit(0);
     }
 
@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
         {
             strncpy(buffer, msg, 6);
             buffer[6] = '\0';
-            if(!strcmp(buffer, "URROOT"))
-            {
-                is_root = 1;
 
-                //caso não haja nenhuma raiz associada ao streamID
+            if(!strcmp(buffer, "URROOT")) //caso não haja nenhuma raiz associada ao streamID
+            {
+                
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
+                is_root = 1;
 
                 //1. Estabelecer sessão TCP com o servidor fonte
                 if(flag_d)
@@ -136,7 +136,6 @@ int main(int argc, char *argv[])
                 }
 
                 //2. instalar servidor TCP para o ponto de acesso a jusante
-
                 //Cria ponto de comunicação no porto tport
                 fd_tcp_server = tcp_bind(tport);
 
