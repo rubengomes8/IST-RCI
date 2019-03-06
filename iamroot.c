@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
                 is_root = 1;
 
-                //1. Estabelecer sessão TCP com o servidor fonte
+                //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
                 if(flag_d)
                 {
                     printf("A estabelecer ligação TCP com o servidor fonte...\n");
@@ -177,7 +177,9 @@ int main(int argc, char *argv[])
                     printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
                 }
 
-                //2. instalar servidor TCP para o ponto de acesso a jusante
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                ////////////////// 2. instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
                 //Cria ponto de comunicação no porto tport
                 if(flag_d)
                 {
@@ -202,7 +204,9 @@ int main(int argc, char *argv[])
                 //Cria array com tamanho tcp_sessions para ligações a jusante
                 fd_array = fd_array_init(tcp_sessions);
 
-                //3. instalar o servidor UDP de acesso de raiz
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
                 fd_udp = udp_socket(NULL, uport, &res_udp);
                 if(fd_udp == -1)
                 {
@@ -226,9 +230,11 @@ int main(int argc, char *argv[])
                     exit(0);
                 }
 
-                //4. executar a interface de utilizador
-                interface_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+                //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
+                interface_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
             else if (!strcmp(buffer, "ROOTIS"))
             {
@@ -246,7 +252,7 @@ int main(int argc, char *argv[])
                 }
 
                 //caso já exista uma raiz associada à stream, a aplicação deverá
-                //1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso
+                ///////////// 1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso ////////////
                 fd_udp = udp_socket(rasaddr, rasport, &res_udp);
                 if(fd_udp == -1)
                 {
@@ -277,10 +283,12 @@ int main(int argc, char *argv[])
                     }
                 }
 
+                //prints para verificar que está tudo ok. são para tirar depois
                 printf("pop_addr %s\n", pop_addr);
                 printf("pop_tport %s\n", pop_tport);
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                //2. estabelecer sessão TCP com o ponto de acesso
+                //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
                 if(flag_d)
                 {
                     printf("A estabelecer ligação TCP com o um peer...\n");
@@ -300,14 +308,23 @@ int main(int argc, char *argv[])
                 {
                     printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
                 }
-
-
-                //3. aguardar confirmação de adesão
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-                //4. Instalar servidor TCP para o ponto de acesso a jusante
+                /////////////////////////// 3. aguardar confirmação de adesão ///////////////////////////////////////////
+
+                //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
+
+
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+                ////////////////// 4. Instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
                 //Cria ponto de comunicação no porto tport
                 if(flag_d)
                 {
@@ -331,20 +348,26 @@ int main(int argc, char *argv[])
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
                 fd_array = fd_array_init(tcp_sessions);
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+                //////////////// 5. Enviar a montante a informação do novo ponto de acesso //////////////////////////////
+
+
+                //Enviar port TCP para o perr de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
+                //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
+
+
+
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-                //5. Enviar a montante a informação do novo ponto de acesso
-
-
-
-
-
-
-                //6. Executar a interface de utilizador
+                ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
-
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
             free(msg);
         }
