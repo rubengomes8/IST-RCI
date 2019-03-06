@@ -13,25 +13,38 @@
 #define RS_PORT "59000"
 
 
+//Defines relativos aos valores default
+#define TPORT "58000"
+#define UPORT "58000"
+#define RSADDR "193.136.138.142"
+#define RSPORT "59000"
+#define TCP_SESSIONS 1
+#define BESTPOPS 1
+#define TSECS 5
+#define FLAG_H 0
+#define FLAG_B 1
+#define FLAG_D 0
+#define ASCII 1
+
 
 //Vamos precisar de as usar várias vezes, por isso defini como variáveis globais
-int flag_b = 1; //apresenta os dados da stream na interface quando está a 1
-int flag_d = 0; //apresenta informação detalhada do funcionamento da aplicação quando está a 1
-int ascii = 1; //apresenta os dados da stream em ascii quando está a 1 e em hexadecimal quando está a 0
+int flag_b = FLAG_B; //apresenta os dados da stream na interface quando está a 1
+int flag_d = FLAG_D; //apresenta informação detalhada do funcionamento da aplicação quando está a 1
+int ascii = ASCII; //apresenta os dados da stream em ascii quando está a 1 e em hexadecimal quando está a 0
 
 int main(int argc, char *argv[])
 {
     ///////////////////////////////////// Argumentos de entrada ////////////////////////////////////////////////////////
     char streamID[STREAM_ID_SIZE]; //mystream:193.136.138.142:59000 (exemplo)
     char ipaddr[IP_LEN + 1];
-    char tport[PORT_LEN + 1] = "58000"; //tport - porto TCP onde a app aceita sessões de outros pares a jusante
-    char uport[PORT_LEN + 1] = "58000"; //uport - porto UDP do servidor de acesso
-    char rsaddr[IP_LEN + 1] = "193.136.138.142"; //endereço IP do servidor de raízes
-    char rsport[PORT_LEN + 1] = "59000"; //porto UDP do servidor de raízes
-    int tcp_sessions = 1; //número de sessões TCP que a aplicação aceita a jusante
-    int bestpops = 1; //número de pontos de acesso, não inferior a um, a recolher por esta instância da aplicação, quando raiz, durante a descoberta de pontos de acesso
-    int tsecs = 5; //período, em segundos, associado ao registo periódico que a raiz deve fazer no servidor de raízes
-    int flag_h = 0; //apresenta a sinopse da linha de comandos associada à invocação da aplicação e termina de seguida, quando está a 1
+    char tport[PORT_LEN + 1] = TPORT; //tport - porto TCP onde a app aceita sessões de outros pares a jusante
+    char uport[PORT_LEN + 1] = UPORT; //uport - porto UDP do servidor de acesso
+    char rsaddr[IP_LEN + 1] = RSADDR; //endereço IP do servidor de raízes
+    char rsport[PORT_LEN + 1] = RSPORT; //porto UDP do servidor de raízes
+    int tcp_sessions = TCP_SESSIONS; //número de sessões TCP que a aplicação aceita a jusante
+    int bestpops = BESTPOPS; //número de pontos de acesso, não inferior a um, a recolher por esta instância da aplicação, quando raiz, durante a descoberta de pontos de acesso
+    int tsecs = TSECS; //período, em segundos, associado ao registo periódico que a raiz deve fazer no servidor de raízes
+    int flag_h = FLAG_H; //apresenta a sinopse da linha de comandos associada à invocação da aplicação e termina de seguida, quando está a 1
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     int has_stream = 0;
@@ -85,12 +98,9 @@ int main(int argc, char *argv[])
 	char *msg = NULL;
 	char *token = NULL;
 
-
-	//Verifica se a stream foi especificada e se é válida
-    has_stream = validate_stream(argc, argv[1], streamID, streamNAME, streamIP, streamPORT);
-
     //Lê e verifica os restantes argumentos
-    arguments_reading(argc, argv, has_stream, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops, &tsecs, &flag_h);
+    has_stream = arguments_reading(argc, argv, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops,
+            &tsecs, &flag_h, streamID, streamNAME, streamIP, streamPORT);
 
     if(flag_h == 1)
     {
@@ -115,6 +125,8 @@ int main(int argc, char *argv[])
                     printf("\n");
                     printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
                     printf("A terminar o programa...\n");
+                    freeaddrinfo(res_rs);
+                    close(fd_rs);
                     exit(0);
                 }
             }
@@ -166,7 +178,7 @@ int main(int argc, char *argv[])
                 udp_bind(fd_udp, res_udp);
 
                 //4. executar a interface de utilizador
-                interface(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
+                interface_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -203,6 +215,13 @@ int main(int argc, char *argv[])
                 //2. estabelecer sessão TCP com o ponto de acesso
 
                 //3. aguardar confirmação de adesão
+
+                //4. Instalar servidor TCP para o ponto de acesso a jusante
+
+                //5. Enviar a montante a informação do novo ponto de acesso
+
+                //6. Executar a interface de utilizador
+                interface_not_root();
 
             }
             free(msg);

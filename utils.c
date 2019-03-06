@@ -150,9 +150,12 @@ int validate_stream(int argc, char *argv1, char* streamID, char* streamNAME, cha
 }
 
 
-void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], char tport[], char uport[], char rsaddr[], char rsport[], int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h){
+int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char uport[], char rsaddr[], char rsport[],
+		int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h, char *streamID, char *streamNAME, char *streamIP, char *streamPORT)
+{
 	int i=0, n=0;
 	char *token = NULL;
+	int has_stream = 0;
 
 	//Validação dos argumentos com base no seu número
 /*	if(has_stream == 1 && argc%2 != 0)
@@ -171,21 +174,21 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 	//Acho que isto dá problema se executarmos com uma das flags isoladas (b, d ou h) antes de uma das outras.
 	for (n = 1; n < argc; n+=2)
 	{
-		if(n + has_stream > argc - 1)
+		if(n > argc - 1)
 		{
 			//printf("Argumentos inválidos!\n");
 			//exit(1);
 			break;
 		}
 
-		if(!strcmp(argv[n + has_stream], "-i"))
+		if(!strcmp(argv[n], "-i"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			strcpy(ipaddr, argv[n + has_stream + 1]);
+			strcpy(ipaddr, argv[n + 1]);
 			if(strlen(ipaddr) > IP_LEN)
 			{
 				printf("ippaddr tem tamanho superior ao possível!\n");
@@ -193,14 +196,14 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("ipaddr: %s\n", ipaddr);
 		}
-		else if(!strcmp(argv[n + has_stream], "-t"))
+		else if(!strcmp(argv[n], "-t"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			strcpy(tport, argv[n + has_stream + 1]);
+			strcpy(tport, argv[n + 1]);
 			if(strlen(tport) > PORT_LEN)
 			{
 				printf("tport tem tamanho superior ao possível!\n");
@@ -208,14 +211,14 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("tport: %s\n", tport);
 		}
-		else if(!strcmp(argv[n + has_stream], "-u"))
+		else if(!strcmp(argv[n], "-u"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			strcpy(uport, argv[n + has_stream + 1]);
+			strcpy(uport, argv[n + 1]);
 			if(strlen(uport) > PORT_LEN)
 			{
 				printf("uport tem tamanho superior ao possível!\n");
@@ -223,18 +226,18 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("uport: %s\n", uport);
 		}
-		else if(!strcmp(argv[n + has_stream], "-s"))
+		else if(!strcmp(argv[n], "-s"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			i = count_specific_char(argv[n + has_stream + 1], ':');
+			i = count_specific_char(argv[n + 1], ':');
 			if(i == 1)
 			{
 				//split into rsaddr e rsport
-				token = strtok(argv[n + has_stream + 1], ":");
+				token = strtok(argv[n + 1], ":");
 				if(token == NULL)
 				{
 					printf("rsaddr inválido!\n");
@@ -271,7 +274,7 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			else if (i == 0)
 			{
-				strcpy(rsaddr, argv[n + has_stream + 1]);
+				strcpy(rsaddr, argv[n +1]);
 				printf("rsaddr: %s\n", rsaddr);
 			}
 			else
@@ -280,14 +283,14 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 				exit(-1);
 			}
 		}
-		else if(!strcmp(argv[n + has_stream], "-p"))
+		else if(!strcmp(argv[n], "-p"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			*tcp_sessions = atoi(argv[n + has_stream + 1]);
+			*tcp_sessions = atoi(argv[n + 1]);
 			if(*tcp_sessions < 1)
 			{
 				printf("tcpsessions must be at least 1!\n");
@@ -295,14 +298,14 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("tcp_sessions: %d\n", *tcp_sessions);
 		}
-		else if(!strcmp(argv[n + has_stream], "-n"))
+		else if(!strcmp(argv[n], "-n"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			*bestpops = atoi(argv[n + has_stream + 1]);
+			*bestpops = atoi(argv[n + 1]);
 			if(*bestpops < 1)
 			{
 				printf("bestpops must be at least 1!\n");
@@ -310,14 +313,14 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("bestpops: %d\n", *bestpops);
 		}
-		else if(!strcmp(argv[n + has_stream], "-x"))
+		else if(!strcmp(argv[n], "-x"))
 		{
-			if(n + has_stream + 1> argc - 1)
+			if(n + 1> argc - 1)
 			{
 				printf("Argumentos inválidos!\n");
 				exit(1);
 			}
-			*tsecs = atoi(argv[n + has_stream + 1]);
+			*tsecs = atoi(argv[n + 1]);
 			if(*tsecs < MIN_TSECS)
 			{
 				printf("tsecs must be at least 1!\n");
@@ -325,19 +328,19 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 			}
 			printf("tsecs: %d\n", *tsecs);
 		}
-		else if(!strcmp(argv[n + has_stream], "-b"))
+		else if(!strcmp(argv[n], "-b"))
 		{
 			flag_b = 0;
 			n--;
 			printf("b: %d\n", flag_b);
 		}
-		else if(!strcmp(argv[n + has_stream], "-d"))
+		else if(!strcmp(argv[n], "-d"))
 		{
 			flag_d = 1;
 			n--;
 			printf("d: %d\n", flag_d);
 		}
-		else if(!strcmp(argv[n + has_stream], "-h"))
+		else if(!strcmp(argv[n], "-h"))
 		{
 			*flag_h = 1;
 			n--;
@@ -345,11 +348,12 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 		}
 		else
 		{
-			printf("Usage of incorrect flags!\n"); // talvez imprimir o metodo e invocação
-			exit(-1);
+			has_stream = validate_stream(argc, argv[n], streamID, streamNAME, streamIP, streamPORT);
+			n--;
 		}
 	}
 
+	return has_stream;
 }
 
 void stream_id_to_lowercase(char *streamID)

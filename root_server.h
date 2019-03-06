@@ -10,8 +10,8 @@
 #define POPREQ_LEN 8 //comprimento da mensagem POPREQ
 #define POPRESP_LEN 95 //comprimento da mensagem POPRESP
 
-#define TIMEOUT_SECS 0
-#define TIMEOUT_USECS 1
+#define TIMEOUT_SECS 10
+#define TIMEOUT_USECS 0
 
 #include "udp.h"
 #include <sys/select.h>

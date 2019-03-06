@@ -98,6 +98,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     {
         if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
         free(msg2);
+        free(timeout);
         return NULL;
     }
 
@@ -113,6 +114,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
         printf("Mensagem recebida do servidor de raízes: %s\n", msg2);
     }
 
+    free(timeout);
     return msg2;
 }
 

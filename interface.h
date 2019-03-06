@@ -3,8 +3,9 @@
 
 #include "root_server.h"
 
-void interface(int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
+void interface_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp);
+void interface_not_root();
 int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char *ipaddr, char* uport, char* tport,
                    int tcp_sessions, int tcp_occupied);
 

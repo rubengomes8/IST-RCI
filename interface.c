@@ -5,7 +5,7 @@ extern int flag_d;
 extern int flag_b;
 extern int ascii;
 
-void interface(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
+void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp)
 {
     char buffer[BUFFER_SIZE];
@@ -41,6 +41,11 @@ void interface(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, 
             if(exit_flag == 1) return;
         }
     }
+}
+
+void interface_not_root()
+{
+
 }
 
 int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char *ipaddr, char* uport, char* tport,
