@@ -15,24 +15,28 @@ int tcp_socket_connect(char *host, char *service)
   hints.ai_flags = AI_NUMERICSERV;
 
   n = getaddrinfo(host, service, &hints, &res);
-  if(n != 0 && flag_d)
+  if(n != 0)
   {
-    fprintf(stderr, "Error: getaddrinfo: %s\n", gai_strerror(n));
-    exit(1);
+    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: getaddrinfo: %s\n", gai_strerror(n));
+    freeaddrinfo(res);
+    return -1;
   }
 
   fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  if(fd == -1 && flag_d)
+  if(fd == -1)
   {
-    fprintf(stderr, "Error: socket: %s\n", strerror(errno));
-    exit(1);
+    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: socket: %s\n", strerror(errno));
+    freeaddrinfo(res);
+    return -1;
   }
 
   n = connect(fd, res->ai_addr, res->ai_addrlen);
-  if(n == -1 && flag_d)
+  if(n == -1)
   {
-    fprintf(stderr, "Error: connect: %s\n", strerror(errno));
-    exit(1);
+    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: connect: %s\n", strerror(errno));
+    close(fd);
+    freeaddrinfo(res);
+    return -1;
   }
 
   freeaddrinfo(res);
@@ -66,8 +70,8 @@ void tcp_send(int nbytes, char *ptr, int fd)
     nwritten = write(fd, ptr, nleft);
     if(nwritten <= 0)
     {
-      fprintf(stderr, "Error: write: %s\n", strerror(errno));
-      exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_send: write: %s\n", strerror(errno));
+        exit(1);
     }
     nleft -= nwritten;
     ptr += nwritten; //incremento do ponteiro até ao primeiro caracter não enviado
@@ -85,8 +89,8 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     nread = read(fd, ptr, nleft);
     if(nread == -1)
     {
-      fprintf(stderr, "Error: read: %s\n", strerror(errno));
-      exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_receive: read: %s\n", strerror(errno));
+        exit(1);
     }
     else if(nread == 0)
     {
@@ -116,29 +120,35 @@ int tcp_bind(char *service)
     n = getaddrinfo(NULL, service, &hints, &res);
     if(n!=0)
     {
-        fprintf(stderr, "Error: getaddrinfo: %s\n", gai_strerror(n));
-        exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_bind: getaddrinfo: %s\n", gai_strerror(n));
+        freeaddrinfo(res);
+        return -1;
     }
 
     fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if(fd == -1)
     {
-        fprintf(stderr, "Error: socket: %s\n", strerror(errno));
-        exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_bind: socket: %s\n", strerror(errno));
+        freeaddrinfo(res);
+        return -1;
     }
 
     n = bind(fd, res->ai_addr, res->ai_addrlen);
     if(n == -1)
     {
-        fprintf(stderr, "Error: bind: %s\n", strerror(errno));
-        exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_bind: bind: %s\n", strerror(errno));
+        freeaddrinfo(res);
+        close(fd);
+        return -1;
     }
 
     n = listen(fd, MAX_CONNECTIONS_PENDING);
     if(n == -1)
     {
-        fprintf(stderr, "Error: listen: %s\n", strerror(errno));
-        exit(1);
+        if(flag_d) fprintf(stderr, "Error: tcp_bind: listen: %s\n", strerror(errno));
+        freeaddrinfo(res);
+        close(fd);
+        return -1;
     }
 
     freeaddrinfo(res);
@@ -152,9 +162,9 @@ int *fd_array_init(int tcp_sessions)
     int i;
 
     fd_array = (int *)malloc(sizeof(int)*tcp_sessions);
-    if(fd_array == NULL && flag_d)
+    if(fd_array == NULL)
     {
-        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Error: fd_array_init: malloc: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -194,7 +204,7 @@ void new_connection(int fd, int *fd_array)
     addrlen = sizeof(addr);
     //Recebe um novo pedido de ligação
     if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
-        fprintf(stderr, "Error: accept: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -225,7 +235,7 @@ void tcp_echo_communication(int *fd_array, char *buffer, int i)
         //Caso haja um erro de leitura imprime o erro no ecrã e fecha a ligação
         if(n == -1)
         {
-            fprintf(stderr, "Error: read: %s\n", strerror(errno));
+            if(flag_d) fprintf(stderr, "Error: tcp_echo_communications: read: %s\n", strerror(errno));
             close(fd_array[i]);
             fd_array[i] = -1;
         }

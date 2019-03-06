@@ -14,6 +14,8 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     fd_set fd_read_set;
     int exit_flag = 0;
 
+    printf("\n\nINTERFACE DE UTILIZADOR\n\n");
+
 
     while(1)
     {
@@ -28,11 +30,12 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         if(counter <= 0)
         {
             if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
-            exit(1);
+            return;
         }
 
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
+            //Servidor de acessos
             popresp(fd_udp, streamID);
         }
         else if(FD_ISSET(0, &fd_read_set))
@@ -43,22 +46,61 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     }
 }
 
-void interface_not_root()
+void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char* ipaddr, char *uport,
+        char *tport, int tcp_sessions, int tcp_occupied, int fd_udp)
 {
+    int maxfd, counter;
+    fd_set fd_read_set;
+    int exit_flag = 0;
 
+    printf("\n\nINTERFACE DE UTILIZADOR\n\n");
+
+    while(1)
+    {
+        FD_ZERO(&fd_read_set);
+
+        FD_SET(0, &fd_read_set);
+        maxfd = 0;
+
+        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval*)NULL);
+        if(counter <= 0)
+        {
+            if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
+            return;
+        }
+
+        if(FD_ISSET(0, &fd_read_set))
+        {
+            exit_flag = read_terminal(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied);
+            if(exit_flag == 1)return;
+        }
+    }
 }
 
 int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char *ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied)
 {
     char buffer[BUFFER_SIZE];
-
+    int counter = 0; //conta tentativas de chamada de uma função
 
     fgets(buffer, BUFFER_SIZE, stdin);
 
     if(!strcasecmp(buffer, "streams\n"))
     {
-        dump(fd_rs, res_rs);
+        while(dump(fd_rs, res_rs) == -1)
+        {
+            counter++;
+            if(counter == MAX_TRIES)
+            {
+                if(flag_d)
+                {
+                    printf("\n");
+                    printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
+                    printf("A terminar o programa...\n");
+                    return 1;
+                }
+            }
+        }
     }
     else if(!strcasecmp(buffer, "status\n"))
     {

@@ -26,5 +26,6 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
         char *streamIP, char *streamPORT);
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
 void stream_id_to_lowercase(char *streamID);
+int get_root_access_server(char *rasaddr, char *rasport, char *msg);
 
 #endif //UTILS_UTILS_H

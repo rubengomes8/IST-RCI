@@ -10,7 +10,7 @@
 #define POPREQ_LEN 8 //comprimento da mensagem POPREQ
 #define POPRESP_LEN 95 //comprimento da mensagem POPRESP
 
-#define TIMEOUT_SECS 10
+#define TIMEOUT_SECS 1
 #define TIMEOUT_USECS 0
 
 #include "udp.h"
@@ -18,9 +18,9 @@
 
 //Este .c e .h implementam a comunicação com o servidor de raízes
 
-void dump(int fd_rs, struct addrinfo *res_rs);
+int dump(int fd_rs, struct addrinfo *res_rs);
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport);
-void popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char* pop_tport);
+int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char* pop_tport);
 void popresp(int fd_udp, char* streamID);
 void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID);
 

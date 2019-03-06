@@ -379,3 +379,29 @@ void stream_id_to_lowercase(char *streamID)
 
 	return;
 }
+
+int get_root_access_server(char *rasaddr, char *rasport, char *msg)
+{
+	char *token = NULL;
+
+	token = strtok(msg, " ");
+	token = strtok(NULL, " ");
+
+	token = strtok(NULL, ":");
+	if(token == NULL)
+	{
+		if(flag_d) printf("ipaddr inválido!\n");
+		return -1;
+	}
+	strcpy(rasaddr, token);
+
+	token = strtok(NULL, "\n");
+	if(token == NULL)
+	{
+		if(flag_d) printf("uport inválido!\n");
+		return -1;
+	}
+	strcpy(rasport, token);
+
+	return 0;
+}
