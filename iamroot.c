@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
                     if(flag_d) printf("A aplicação irá terminar...\n");
                     close(fd_rs);
                     freeaddrinfo(res_rs);
+                    freeaddrinfo(res_udp);
                     free(msg);
                     exit(0);
                 }
@@ -337,6 +338,7 @@ int main(int argc, char *argv[])
                     if(flag_d) printf("A aplicação irá terminar...\n");
                     close(fd_rs);
                     freeaddrinfo(res_rs);
+                    freeaddrinfo(res_udp);
                     free(msg);
                     exit(0);
                 }
