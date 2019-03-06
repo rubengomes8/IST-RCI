@@ -16,12 +16,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 
 void sinopse();
 int count_specific_char(char *string, char ch);
 void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], char tport[], char uport[], char rsaddr[], char rsport[], int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h);
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
-
+void stream_id_to_lowercase(char *streamID);
 
 #endif //UTILS_UTILS_H

@@ -34,6 +34,7 @@ void dump(int fd_rs, struct addrinfo *res_rs)
     }
 }
 
+//Retorna NULL se não receber resposta
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport)
 {
     int msg_len;
@@ -42,14 +43,28 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     int n;
     char *msg;
     char *msg2;
+    struct timeval *timeout = NULL;
+    int counter;
+    int maxfd;
+    fd_set fdSet;
+
+    timeout = (struct timeval *)malloc(sizeof(struct timeval));
+    if(timeout == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    timeout->tv_sec = TIMEOUT_SECS;
+    timeout->tv_usec = TIMEOUT_USECS;
 
     addrlen = sizeof(addr);
 
     //solicitar ao root_server o endereço IP e porto UDP do root_access_server associado ao streamID
     msg = (char*) malloc(sizeof(char)*WIR_LEN);
-    if(msg == NULL && flag_d == 1)
+    if(msg == NULL)
     {
-        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
         exit(-1);
     }
 
@@ -67,11 +82,25 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     free(msg);
 
     msg2 = (char*) malloc(sizeof(char)*RIS_LEN);
-    if(msg2 == NULL && flag_d == 1)
+    if(msg2 == NULL)
     {
-        fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
         exit(-1);
     }
+
+    FD_ZERO(&fdSet);
+    FD_SET(fd_rs, &fdSet);
+    maxfd = fd_rs;
+
+    counter = select(maxfd + 1, &fdSet, (fd_set *)NULL, (fd_set *)NULL, timeout);
+
+    if(counter <= 0)
+    {
+        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
+        free(msg2);
+        return NULL;
+    }
+
 
 
     n = RIS_LEN; //Máximo comprimento da mensagem que pode receber
@@ -138,17 +167,17 @@ void popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tpor
     token = strtok(msg_rcv, " ");
     token = strtok(NULL, " ");
     token = strtok(NULL, ":");
-    if(token == NULL && flag_d)
+    if(token == NULL)
     {
-        printf("ipaddr inválido!\n");
+        if(flag_d) printf("ipaddr inválido!\n");
         exit(1);
     }
     strcpy(pop_addr, token);
 
     token = strtok(NULL, "\n");
-    if(token == NULL && flag_d)
+    if(token == NULL)
     {
-        printf("tport inválido!\n");
+        if(flag_d) printf("tport inválido!\n");
         exit(1);
     }
 
@@ -175,9 +204,9 @@ void popresp(int fd_udp, char *streamID)
     }
 
     printf("msg: %s\n", msg);
-    if(strcmp(msg, "POPREQ\n") != 0 && flag_d)
+    if(strcmp(msg, "POPREQ\n") != 0)
     {
-        printf("Mensagem inválida!\n");
+        if(flag_d) printf("Mensagem inválida!\n");
         return;
     }
 

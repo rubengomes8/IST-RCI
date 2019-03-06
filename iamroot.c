@@ -4,7 +4,7 @@
 #include "root_server.h"
 #include "interface.h"
 
-
+#define MAX_TRIES 10 //máximo de tentativas de comunicação falhadas antes de o programa terminar
 
 
 
@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+    //Conta tentativas de comunicação
+    int counter = 0;
 
     char buffer[BUFFER_SIZE];
 
@@ -102,6 +104,23 @@ int main(int argc, char *argv[])
     if(has_stream)
     {
         msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
+        //Enquanto receber NULL, significa que não houve resposta do servidor de raízes
+        while(msg == NULL)
+        {
+            counter++;
+            if(counter == MAX_TRIES)
+            {
+                if(flag_d)
+                {
+                    printf("\n");
+                    printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
+                    printf("A terminar o programa...\n");
+                    exit(0);
+                }
+            }
+            who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
+        }
+        counter = 0; //Reset do contador, caso tenha sido possível comunicar
 
         if(!strcmp(msg, "ERROR")) //Recebeu Error
         {

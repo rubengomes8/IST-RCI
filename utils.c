@@ -49,9 +49,7 @@ int count_specific_char(char *string, char ch){
 int validate_stream(int argc, char *argv1, char* streamID, char* streamNAME, char *streamIP, char* streamPORT)
 {
 	int n;
-	char *token;
-
-
+	char *token = NULL;
 
 	//Só para ver se há stream ou não
 	if(argc > 1)
@@ -69,6 +67,9 @@ int validate_stream(int argc, char *argv1, char* streamID, char* streamNAME, cha
 			if(n == 2)
 			{
 				strcpy(streamID, argv1);
+
+				//Passa o streamID para minúsculas
+				stream_id_to_lowercase(streamID);
 
 				token = strtok(streamID, ":");
 				if(token == NULL)
@@ -118,7 +119,12 @@ int validate_stream(int argc, char *argv1, char* streamID, char* streamNAME, cha
 					strcpy(streamPORT, token);
 				}
 
+				//token = NULL;
+
 				strcpy(streamID, argv1);
+
+				//Passa o streamID para minúsculas
+				stream_id_to_lowercase(streamID);
 				printf("streamID: %s\n", streamID);
 				printf("streamName: %s\n", streamNAME);
 				printf("streamIP: %s\n", streamIP);
@@ -344,4 +350,28 @@ void arguments_reading(int argc, char *argv[], int has_stream, char ipaddr[], ch
 		}
 	}
 
+}
+
+void stream_id_to_lowercase(char *streamID)
+{
+	int len, i;
+
+	len = strlen(streamID);
+
+	for(i = 0; i<len; i++)
+	{
+		//Quando chegar aos dois pontos pára, porque o que vem a seguir são números
+		if(streamID[i] == ':')
+		{
+			return;
+		}
+
+		//Converte todos os caracteres não numéricos em minúsculas
+		if(streamID[i] >= 'A' && streamID[i] <= 'Z')
+		{
+			streamID[i] = streamID[i] - ('A' - 'a');
+		}
+	}
+
+	return;
 }

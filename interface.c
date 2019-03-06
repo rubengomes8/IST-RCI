@@ -25,9 +25,9 @@ void interface(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, 
         maxfd = fd_udp;
 
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)NULL);
-        if(counter <= 0 && flag_d)
+        if(counter <= 0)
         {
-            fprintf(stderr, "Error: select: %s\n", strerror(errno));
+            if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
             exit(1);
         }
 
