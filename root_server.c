@@ -253,7 +253,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
     return 0;
 }
 
-void popresp(int fd_udp, char *streamID)
+void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 {
     char msg[POPREQ_LEN];
     int msg_len = POPREQ_LEN;
@@ -281,7 +281,7 @@ void popresp(int fd_udp, char *streamID)
 
     //Chamar função para procurar pontos de ligação
 
-    sprintf(msg2, "POPRESP %s %s:%s\n", streamID, "ip_teste", "teste");
+    sprintf(msg2, "POPRESP %s %s:%s\n", streamID, ipaddr, tport);
 
     if(flag_d)
     {

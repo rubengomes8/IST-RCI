@@ -21,7 +21,7 @@
 int dump(int fd_rs, struct addrinfo *res_rs);
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport);
 int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char* pop_tport);
-void popresp(int fd_udp, char* streamID);
+void popresp(int fd_udp, char* streamID, char *ipaddr, char *tport);
 void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID);
 
 #endif //RCI_ROOT_SERVER_H

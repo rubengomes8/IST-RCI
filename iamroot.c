@@ -4,10 +4,6 @@
 #include "root_server.h"
 #include "interface.h"
 
-
-
-
-
 #define RS_IP "193.136.138.142"
 #define RS_PORT "59000"
 
@@ -183,6 +179,11 @@ int main(int argc, char *argv[])
 
                 //2. instalar servidor TCP para o ponto de acesso a jusante
                 //Cria ponto de comunicação no porto tport
+                if(flag_d)
+                {
+                    printf("A instalar servidor TCP para transmissão a jusante...\n");
+                }
+
                 fd_tcp_server = tcp_bind(tport);
                 if(fd_tcp_server == -1)
                 {
@@ -191,6 +192,11 @@ int main(int argc, char *argv[])
                     freeaddrinfo(res_rs);
                     free(msg);
                     exit(0);
+                }
+
+                if(flag_d)
+                {
+                    printf("Servidor TCP para comunicação a jusante instalado com sucesso, no endereço %s:%s\n", ipaddr, tport);
                 }
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
@@ -275,12 +281,66 @@ int main(int argc, char *argv[])
                 printf("pop_tport %s\n", pop_tport);
 
                 //2. estabelecer sessão TCP com o ponto de acesso
+                if(flag_d)
+                {
+                    printf("A estabelecer ligação TCP com o um peer...\n");
+                }
+
+                fd_ss = tcp_socket_connect("127.0.0.1", "58000");
+                if(fd_ss == -1)
+                {
+                    if(flag_d) printf("A aplicação irá terminar...\n");
+                    close(fd_rs);
+                    freeaddrinfo(res_rs);
+                    free(msg);
+                    exit(0);
+                }
+
+                if(flag_d)
+                {
+                    printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
+                }
+
 
                 //3. aguardar confirmação de adesão
 
+
+
+
                 //4. Instalar servidor TCP para o ponto de acesso a jusante
+                //Cria ponto de comunicação no porto tport
+                if(flag_d)
+                {
+                    printf("A instalar servidor TCP para transmissão a jusante...\n");
+                }
+
+                fd_tcp_server = tcp_bind(tport);
+                if(fd_tcp_server == -1)
+                {
+                    if(flag_d) printf("A aplicação irá terminar...\n");
+                    close(fd_rs);
+                    freeaddrinfo(res_rs);
+                    free(msg);
+                    exit(0);
+                }
+
+                if(flag_d)
+                {
+                    printf("Servidor TCP para comunicação a jusante instalado com sucesso, no endereço %s:%s\n", ipaddr, tport);
+                }
+
+                //Cria array com tamanho tcp_sessions para ligações a jusante
+                fd_array = fd_array_init(tcp_sessions);
+
+
+
 
                 //5. Enviar a montante a informação do novo ponto de acesso
+
+
+
+
+
 
                 //6. Executar a interface de utilizador
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);

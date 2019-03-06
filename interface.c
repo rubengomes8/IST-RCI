@@ -36,7 +36,8 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
             //Servidor de acessos
-            popresp(fd_udp, streamID);
+            //Dar ip e porta onde ligar
+            popresp(fd_udp, streamID, "tpaddr", "tport");
         }
         else if(FD_ISSET(0, &fd_read_set))
         {
