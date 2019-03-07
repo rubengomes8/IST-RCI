@@ -68,7 +68,7 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     return 0;
 }
 
-//Retorna NULL se não receber resposta
+//Retorna NULL se não receber resposta ou retorna ROOTIS(URROOT) caso a resposta tenha sido recebida
 char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsaddr, char *rsport, char* ipaddr, char* uport)
 {
     int msg_len;
@@ -306,7 +306,7 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 
 //////////////////////////////////// Comunicação entre pares ///////////////////////////////////////////////////////////
 //Retorna NULL se não receber resposta
-char* receive_confirmation(int fd_tcp, char *msg)
+char *receive_confirmation(int fd_tcp, char *msg)
 {
     int msg_len;
     int n;
@@ -322,7 +322,7 @@ char* receive_confirmation(int fd_tcp, char *msg)
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: receive_confirmation: malloc: %s\n", strerror(errno));
-        return -1;
+        return NULL;
     }
 
     timeout = (struct timeval *)malloc(sizeof(struct timeval));
@@ -330,7 +330,7 @@ char* receive_confirmation(int fd_tcp, char *msg)
     {
         if(flag_d) fprintf(stderr, "Error: receive_confirmation: malloc: %s\n", strerror(errno));
         free(msg);
-        return -1;
+        return NULL;
     }
 
     timeout->tv_sec = TIMEOUT_SECS;
@@ -360,6 +360,7 @@ char* receive_confirmation(int fd_tcp, char *msg)
         free(msg);
         return NULL;
     }
+    //Dúvida do RG - Ele aqui pode receber mais do que o espaço que alocou?
     else if(nread > WELCOME_LEN)
     {
         if(flag_d) printf("Recebidos mais caracteres do que o possível do par...\n");
@@ -375,4 +376,15 @@ char* receive_confirmation(int fd_tcp, char *msg)
 
     free(timeout);
     return msg;
+}
+
+int newpop(int fd_pop, char *ipaddr, char *tport)
+{
+    char buffer[NEWPOP_LEN];
+
+    sprintf(buffer, "NP %s:%s\n", ipaddr, tport);
+    tcp_send(NEWPOP_LEN, buffer, fd_pop);
+
+    return 0; //mudar isto
+
 }

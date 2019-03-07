@@ -11,6 +11,7 @@
 #define POPRESP_LEN 95 //comprimento da mensagem POPRESP
 #define WELCOME_LEN 68 //comprimento máximo da mensagem WELCOME
 #define REDIRECT_LEN 25 //comprimento máximo da mensagem REDIRECT
+#define NEWPOP_LEN 	25//comprimento máximo da mensagem NEWPOP 2+1+15+1+5+1
 
 #define TIMEOUT_SECS 1
 #define TIMEOUT_USECS 0
@@ -26,6 +27,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char* pop_tport);
 void popresp(int fd_udp, char* streamID, char *ipaddr, char *tport);
 void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID);
-char* receive_confirmation(int fd_tcp, char *msg);
+char *receive_confirmation(int fd_tcp, char *msg);
+int newpop(int fd_pop, char *ipaddr, char *tport);
 
 #endif //RCI_ROOT_SERVER_H

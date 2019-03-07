@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
     //////////////////////////////////// Comunicação com par a montante ////////////////////////////////////////////////
     char pop_tport[PORT_LEN + 1];
     char pop_addr[IP_LEN + 1];
+    int fd_pop = -1;
+    struct addrinfo *res_pop = NULL;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Conta tentativas de comunicação
@@ -88,6 +90,7 @@ int main(int argc, char *argv[])
     char buffer[BUFFER_SIZE];
 
     int is_root = 0;
+    int confirmation = 0;
 
 	char *msg = NULL;
 	char *token = NULL;
@@ -132,7 +135,7 @@ int main(int argc, char *argv[])
                 free(msg);
                 exit(0);
             }
-            who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
+            msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
         }
         counter = 0; //Reset do contador, caso tenha sido possível comunicar
 
@@ -235,6 +238,7 @@ int main(int argc, char *argv[])
             else if (!strcmp(buffer, "ROOTIS"))
             {
                 //Obtém o IP e o porto do servidor de acesso
+                //Retorna -1 se rasaddr ou rasport forem inválidos
                 if(get_root_access_server(rasaddr, rasport, msg) == -1)
                 {
                     if(flag_d)
@@ -244,7 +248,7 @@ int main(int argc, char *argv[])
                     }
                     freeaddrinfo(res_rs);
                     close(fd_rs);
-                    free(msg);
+                    free(msg); //Dúvida RG : onde é que foi alocada memória para estarmos a fazer este free?
                     exit(0);
                 }
                 free(msg);
@@ -280,17 +284,18 @@ int main(int argc, char *argv[])
                 }
 
                 //prints para verificar que está tudo ok. são para tirar depois
-                printf("pop_addr %s\n", pop_addr);
-                printf("pop_tport %s\n", pop_tport);
+                if(flag_d == 1){
+                    printf("pop_addr %s\n", pop_addr);
+                    printf("pop_tport %s\n", pop_tport);
+                }
+                
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
-                if(flag_d)
-                {
-                    printf("A estabelecer ligação TCP com o um peer...\n");
-                }
+               
 
-                fd_ss = tcp_socket_connect("127.0.0.1", "58000");
+                //Comentei o código em baixo porque não concordei - RG
+                /*fd_ss = tcp_socket_connect("127.0.0.1", "58000");
                 if(fd_ss == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
@@ -303,52 +308,118 @@ int main(int argc, char *argv[])
                 if(flag_d)
                 {
                     printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
-                }
+                }*/
+
+                
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-                /////////////////////////// 3. aguardar confirmação de adesão ///////////////////////////////////////////
+               
 
-                //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
-                //Ou então REDIRECT RE<SP><ipaddr>:<tport><LF>
-
-                //Recebe NULL quando há erro. Nesse caso temos de tentar de novo
-                if(flag_d)
+                while(confirmation == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
-                    printf("A tentar comunicar com o peer...\n");
-                }
-
-                msg = receive_confirmation(fd_ss, msg);
-                while(msg == NULL)
-                {
-                    counter++;
-                    if(counter == MAX_TRIES)
+                    if(flag_d)
                     {
-                        if(flag_d)
-                        {
-                            printf("\n");
-                            printf("Impossível comunicar com o servidor o peer, após %d tentativas...\n", MAX_TRIES);
-                            printf("A terminar o programa...\n");
-                        }
-                        freeaddrinfo(res_rs);
+                        printf("A estabelecer ligação TCP com um peer...\n");
+                    }
+
+                    fd_pop = tcp_socket_connect(pop_addr, pop_tport);
+                    if(fd_pop == -1){
+                        if(flag_d) printf("A aplicação irá terminar...\n");
+                        close(fd_pop);
+                        freeaddrinfo(res_pop);
                         freeaddrinfo(res_udp);
-                        close(fd_rs);
-                        free(msg);
                         exit(0);
                     }
+
+                    if(flag_d)
+                    {
+                        printf("Ligação com o par a montante estabelecida com sucesso!\n");
+                    }
+
+                     /////////////////////////// 3. aguardar confirmação de adesão ///////////////////////////////////////////
+
+                    //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
+                    //Ou então REDIRECT RE<SP><ipaddr>:<tport><LF>
+
+                    //Recebe NULL quando há erro. Nesse caso temos de tentar de novo
                     if(flag_d)
                     {
                         printf("A tentar comunicar com o peer...\n");
                     }
+
+
                     msg = receive_confirmation(fd_ss, msg);
+                    while(msg == NULL)
+                    {
+                        counter++;
+                        if(counter == MAX_TRIES)
+                        {
+                            if(flag_d)
+                            {
+                                printf("\n");
+                                printf("Impossível comunicar com o servidor o peer, após %d tentativas...\n", MAX_TRIES);
+                                printf("A terminar o programa...\n");
+                            }
+                            freeaddrinfo(res_rs);
+                            freeaddrinfo(res_udp);
+                            close(fd_rs);
+                            free(msg);
+                            exit(0);
+                        }
+                        if(flag_d)
+                        {
+                            printf("A tentar comunicar com o peer...\n");
+                        }
+                        msg = receive_confirmation(fd_ss, msg); //Assim está a fazer muitos mallocs - Dúvida RG - acrescentar um free(msg) antes desta linha.
+                    }
+                    counter = 0; //Reset do contador, caso tenha sido possível comunicar
+                    if(flag_d) 
+                    {
+                        printf("Mensagem recebida pelo peer: %s\n", msg);
+                    }
+
+                    strncpy(buffer, msg, 2);
+                    if(!strcmp(buffer, "WE")) //Recebeu uma mensagem  Welcome
+                    {
+                        sprintf(buffer, "WE %s\n", streamID);
+                        if(!strcasecmp(msg, buffer)) //Confirma se a stream está correta 
+                        {
+                            confirmation = 1;
+                        }
+                        else
+                        {
+                            //Recebeu um WELCOME mas com a stream incorreta
+                            //Depois temos de ver melhor qual o progresso do programa nesta situação.
+                        }
+                        free(msg);
+                    }
+                    else if(!strcmp(buffer, "RE")) //Recebeu uma mensagem Redirect
+                    {
+                        if(get_redirect(pop_addr, pop_tport, msg) == -1)
+                        {
+                            if(flag_d)
+                            {
+                                printf("Falha ao obter o novo ponto de acesso...\n");
+                                printf("A aplicação irá terminar...\n");
+                            }
+                            free(msg); 
+                            freeaddrinfo(res_rs);
+                            freeaddrinfo(res_udp);
+                            close(fd_rs);                       
+                            exit(0);
+
+                        }
+                        else
+                        {
+                            free(msg);
+                            //Irá percorrer o ciclo outra vez, de forma a aderir a um novo ponto de acesso
+                            
+                        }
+                    }                
                 }
-                counter = 0; //Reset do contador, caso tenha sido possível comunicar
-                free(msg);
-
-
-
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -385,12 +456,9 @@ int main(int argc, char *argv[])
 
                 //////////////// 5. Enviar a montante a informação do novo ponto de acesso //////////////////////////////
 
-
-                //Enviar port TCP para o perr de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
+                //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
-
-
-
+                newpop(fd_pop, ipaddr, tport); //era fixe meter isto a retornar um inteiro mas se calhar tem de se alterar a funcao tcp_send para retornar um inteiro tambem
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

@@ -1,7 +1,7 @@
 #ifndef UTILS_UTILS_H
 #define UTILS_UTILS_H
 
-#define BUFFER_SIZE 64
+#define BUFFER_SIZE 100
 
 // Definição de tamanho dos vetores que iram alojar o nome da stream, o ip e a porta correspondente
 #define STREAM_ID_SIZE 64
@@ -27,5 +27,6 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
 void stream_id_to_lowercase(char *streamID);
 int get_root_access_server(char *rasaddr, char *rasport, char *msg);
+int get_redirect(char *pop_addr, char *pop_tport, char *msg);
 
 #endif //UTILS_UTILS_H

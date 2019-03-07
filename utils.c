@@ -1,4 +1,4 @@
-#include "utils.h"
+ #include "utils.h"
 
 extern int flag_b;
 extern int flag_d;
@@ -385,6 +385,7 @@ int get_root_access_server(char *rasaddr, char *rasport, char *msg)
 	char *token = NULL;
 
 	token = strtok(msg, " ");
+
 	token = strtok(NULL, " ");
 
 	token = strtok(NULL, ":");
@@ -402,6 +403,32 @@ int get_root_access_server(char *rasaddr, char *rasport, char *msg)
 		return -1;
 	}
 	strcpy(rasport, token);
+
+	return 0;
+}
+
+int get_redirect(char *pop_addr, char *pop_tport, char *msg)
+{
+	char *token = NULL;
+
+	
+	token = strtok(NULL, " ");
+
+	token = strtok(NULL, ":");
+	if(token == NULL)
+	{
+		if(flag_d) printf("ipaddr inválido!\n");
+		return -1;
+	}
+	strcpy(pop_addr, token);
+
+	token = strtok(NULL, "\n");
+	if(token == NULL)
+	{
+		if(flag_d) printf("tport inválido!\n");
+		return -1;
+	}
+	strcpy(pop_tport, token);
 
 	return 0;
 }
