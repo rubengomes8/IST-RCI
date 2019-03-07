@@ -142,6 +142,13 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     //Recebe como resposta ROOTIS - 100 ou URROOT - 82
     n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
+    if(n == -1)
+    {
+        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem UDP...\n");
+        free(timeout);
+        return NULL;
+    }
+
 
     if(flag_d)
     {
@@ -297,3 +304,75 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
     }
 }
 
+//////////////////////////////////// Comunicação entre pares ///////////////////////////////////////////////////////////
+//Retorna NULL se não receber resposta
+char* receive_confirmation(int fd_tcp, char *msg)
+{
+    int msg_len;
+    int n;
+    struct timeval *timeout = NULL;
+    int counter = 0;
+    int maxfd;
+    fd_set fdSet;
+    int nread = 0;
+    char *ptr = NULL;
+    msg = NULL;
+
+    msg = (char*)malloc(sizeof(char)*WELCOME_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: receive_confirmation: malloc: %s\n", strerror(errno));
+        return -1;
+    }
+
+    timeout = (struct timeval *)malloc(sizeof(struct timeval));
+    if(timeout == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Error: receive_confirmation: malloc: %s\n", strerror(errno));
+        free(msg);
+        return -1;
+    }
+
+    timeout->tv_sec = TIMEOUT_SECS;
+    timeout->tv_usec = TIMEOUT_USECS;
+
+
+    FD_ZERO(&fdSet);
+    FD_SET(fd_tcp, &fdSet);
+    maxfd = fd_tcp;
+
+    counter = select(maxfd + 1, &fdSet, (fd_set *)NULL, (fd_set *)NULL, timeout);
+
+    if(counter <= 0)
+    {
+        if(flag_d) printf("Timed out: não foi recebida nenhuma mensagem do peer...\n");
+        free(timeout);
+        free(msg);
+        return NULL;
+    }
+
+    ptr = msg;
+    nread = tcp_receive(WELCOME_LEN, ptr, fd_tcp);
+    if(nread == -1)
+    {
+        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem TCP...\n");
+        free(timeout);
+        free(msg);
+        return NULL;
+    }
+    else if(nread > WELCOME_LEN)
+    {
+        if(flag_d) printf("Recebidos mais caracteres do que o possível do par...\n");
+        free(timeout);
+        free(msg);
+        return NULL;
+    }
+
+    if(flag_d)
+    {
+        printf("Mensagem recebida do servidor de raízes: %s\n", msg);
+    }
+
+    free(timeout);
+    return msg;
+}

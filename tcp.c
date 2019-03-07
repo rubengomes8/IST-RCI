@@ -90,11 +90,11 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     if(nread == -1)
     {
         if(flag_d) fprintf(stderr, "Error: tcp_receive: read: %s\n", strerror(errno));
-        exit(1);
+        return -1;
     }
     else if(nread == 0)
     {
-      break; //conexão terminada pelo peer
+        return 0; //conexão terminada pelo peer
     }
     nleft -= nread;
     ptr += nread;

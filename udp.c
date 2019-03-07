@@ -57,8 +57,8 @@ int udp_receive(int fd, int *msg_len, char* buffer, int flags, struct sockaddr_i
   // n é o número de caracteres recebidos
   n = recvfrom(fd, buffer, *msg_len, flags, (struct sockaddr *)&addr_aux, addrlen);
   if (n == -1) {
-    fprintf(stderr, "Error: udp_receive: recvfrom failed: %s\n", strerror(errno));
-    exit(1);
+    if(flag_d) fprintf(stderr, "Error: udp_receive: recvfrom failed: %s\n", strerror(errno));
+    return -1;
   }
 
 

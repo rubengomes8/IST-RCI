@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
     char pop_addr[IP_LEN + 1];
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
     //Conta tentativas de comunicação
     int counter = 0;
 
@@ -149,6 +148,7 @@ int main(int argc, char *argv[])
         {
             strncpy(buffer, msg, 6);
             buffer[6] = '\0';
+            free(msg);
 
             if(!strcmp(buffer, "URROOT")) //caso não haja nenhuma raiz associada ao streamID
             {
@@ -168,7 +168,6 @@ int main(int argc, char *argv[])
                     if(flag_d) printf("A aplicação irá terminar...\n");
                     close(fd_rs);
                     freeaddrinfo(res_rs);
-                    free(msg);
                     exit(0);
                 }
 
@@ -192,7 +191,6 @@ int main(int argc, char *argv[])
                     if(flag_d) printf("A aplicação irá terminar...\n");
                     close(fd_rs);
                     freeaddrinfo(res_rs);
-                    free(msg);
                     exit(0);
                 }
 
@@ -214,7 +212,6 @@ int main(int argc, char *argv[])
                     close(fd_rs);
                     freeaddrinfo(res_rs);
                     freeaddrinfo(res_udp);
-                    free(msg);
                     free(fd_array);
                     exit(0);
                 }
@@ -225,7 +222,6 @@ int main(int argc, char *argv[])
                     close(fd_rs);
                     freeaddrinfo(res_rs);
                     freeaddrinfo(res_udp);
-                    free(msg);
                     free(fd_array);
                     exit(0);
                 }
@@ -249,7 +245,9 @@ int main(int argc, char *argv[])
                     freeaddrinfo(res_rs);
                     close(fd_rs);
                     free(msg);
+                    exit(0);
                 }
+                free(msg);
 
                 //caso já exista uma raiz associada à stream, a aplicação deverá
                 ///////////// 1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso ////////////
@@ -260,7 +258,6 @@ int main(int argc, char *argv[])
                     close(fd_rs);
                     freeaddrinfo(res_rs);
                     freeaddrinfo(res_udp);
-                    free(msg);
                     exit(0);
                 }
 
@@ -278,7 +275,6 @@ int main(int argc, char *argv[])
                         close(fd_rs);
                         freeaddrinfo(res_rs);
                         freeaddrinfo(res_udp);
-                        free(msg);
                         exit(0);
                     }
                 }
@@ -301,7 +297,6 @@ int main(int argc, char *argv[])
                     close(fd_rs);
                     freeaddrinfo(res_rs);
                     freeaddrinfo(res_udp);
-                    free(msg);
                     exit(0);
                 }
 
@@ -317,6 +312,41 @@ int main(int argc, char *argv[])
                 /////////////////////////// 3. aguardar confirmação de adesão ///////////////////////////////////////////
 
                 //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
+                //Ou então REDIRECT RE<SP><ipaddr>:<tport><LF>
+
+                //Recebe NULL quando há erro. Nesse caso temos de tentar de novo
+                if(flag_d)
+                {
+                    printf("A tentar comunicar com o peer...\n");
+                }
+
+                msg = receive_confirmation(fd_ss, msg);
+                while(msg == NULL)
+                {
+                    counter++;
+                    if(counter == MAX_TRIES)
+                    {
+                        if(flag_d)
+                        {
+                            printf("\n");
+                            printf("Impossível comunicar com o servidor o peer, após %d tentativas...\n", MAX_TRIES);
+                            printf("A terminar o programa...\n");
+                        }
+                        freeaddrinfo(res_rs);
+                        freeaddrinfo(res_udp);
+                        close(fd_rs);
+                        free(msg);
+                        exit(0);
+                    }
+                    if(flag_d)
+                    {
+                        printf("A tentar comunicar com o peer...\n");
+                    }
+                    msg = receive_confirmation(fd_ss, msg);
+                }
+                counter = 0; //Reset do contador, caso tenha sido possível comunicar
+                free(msg);
+
 
 
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,7 +369,6 @@ int main(int argc, char *argv[])
                     close(fd_rs);
                     freeaddrinfo(res_rs);
                     freeaddrinfo(res_udp);
-                    free(msg);
                     exit(0);
                 }
 
@@ -371,7 +400,6 @@ int main(int argc, char *argv[])
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
-            free(msg);
         }
     }
     else
