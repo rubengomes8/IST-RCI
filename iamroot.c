@@ -150,11 +150,11 @@ int main(int argc, char *argv[])
         {
             strncpy(buffer, msg, 6);
             buffer[6] = '\0';
-            printf("\n\n\n message is: %s\n\n\n", msg);
+            //printf("\n\n\n message is: %s\n\n\n", msg);
 
             if(!strcmp(buffer, "URROOT")) //caso não haja nenhuma raiz associada ao streamID
             {
-                
+                if(msg != NULL) free(msg);
                 //aplicação fica registada como sendo a raiz da nova árvore e escoamento
                 is_root = 1;
 
@@ -264,6 +264,7 @@ int main(int argc, char *argv[])
 
                 //caso já exista uma raiz associada à stream, a aplicação deverá
                 ///////////// 1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso ////////////
+                //pôr rasport no porto
                 fd_udp = udp_socket(rasaddr, rasport, &res_udp);
                 if(fd_udp == -1)
                 {
@@ -337,8 +338,9 @@ int main(int argc, char *argv[])
                     }
 
                     //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
-                    
-                    fd_pop = tcp_socket_connect(pop_addr, pop_tport);
+
+                    //pop_addr e pop_tport em vez das strings com os números
+                    fd_pop = tcp_socket_connect("127.0.0.1", "58000");
                     if(fd_pop == -1)
                     {
                         if(flag_d) printf("A aplicação irá terminar...\n");
@@ -366,6 +368,7 @@ int main(int argc, char *argv[])
                         printf("A tentar comunicar com o peer...\n");
                     }
 
+                    //Só funciona quando na interface.c respondermos
 
                     msg = receive_confirmation(fd_ss, msg);
                     while(msg == NULL)

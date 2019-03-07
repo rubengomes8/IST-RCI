@@ -37,6 +37,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         {
             //Servidor de acessos
             //Dar ip e porta onde ligar
+            //ISTO TEM DE PASSAR A RETORNAR O ADDR E ADDRLEN DE QUEM ENVIA A MENSAGEM
             popresp(fd_udp, streamID, "tpaddr", "tport");
         }
         else if(FD_ISSET(0, &fd_read_set))

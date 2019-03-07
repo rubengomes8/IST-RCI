@@ -383,13 +383,13 @@ void stream_id_to_lowercase(char *streamID)
 int get_root_access_server(char *rasaddr, char *rasport, char *msg)
 {
 	char *token = NULL;
-	printf("Message: %s\n", msg);
+	//printf("Message: %s\n", msg);
 	token = strtok(msg, " ");
 
 	token = strtok(NULL, " ");
 
 	token = strtok(NULL, ":");
-	printf("token: %s\n", token);
+	//printf("token: %s\n", token);
 	if(token == NULL)
 	{
 		if(flag_d) printf("ipaddr inválido!\n");
