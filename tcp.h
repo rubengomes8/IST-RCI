@@ -18,7 +18,7 @@
 #include "utils.h"
 
 int tcp_socket_connect(char *host, char *service);
-void tcp_send(int nbytes, char *ptr, int fd);
+int tcp_send(int nbytes, char *ptr, int fd);
 int tcp_receive(int nbytes, char *ptr, int fd);
 
 int tcp_bind(char *service);

@@ -44,7 +44,7 @@ int tcp_socket_connect(char *host, char *service)
   return fd;
 }
 
-void tcp_send(int nbytes, char *ptr, int fd)
+int tcp_send(int nbytes, char *ptr, int fd)
 {
   int nleft, nwritten;
 
@@ -71,11 +71,13 @@ void tcp_send(int nbytes, char *ptr, int fd)
     if(nwritten <= 0)
     {
         if(flag_d) fprintf(stderr, "Error: tcp_send: write: %s\n", strerror(errno));
-        exit(1);
+        return -1;
     }
     nleft -= nwritten;
     ptr += nwritten; //incremento do ponteiro até ao primeiro caracter não enviado
   }
+
+  return 0; //success
 }
 
 int tcp_receive(int nbytes, char *ptr, int fd)

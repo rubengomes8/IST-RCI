@@ -17,6 +17,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 
 void sinopse();
@@ -28,5 +32,6 @@ int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char
 void stream_id_to_lowercase(char *streamID);
 int get_root_access_server(char *rasaddr, char *rasport, char *msg);
 int get_redirect(char *pop_addr, char *pop_tport, char *msg);
+void free_and_close(int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo *res_pop, struct addrinfo *res_ss, int *fd_array);
 
 #endif //UTILS_UTILS_H

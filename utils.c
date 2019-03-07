@@ -383,12 +383,13 @@ void stream_id_to_lowercase(char *streamID)
 int get_root_access_server(char *rasaddr, char *rasport, char *msg)
 {
 	char *token = NULL;
-
+	printf("Message: %s\n", msg);
 	token = strtok(msg, " ");
 
 	token = strtok(NULL, " ");
 
 	token = strtok(NULL, ":");
+	printf("token: %s\n", token);
 	if(token == NULL)
 	{
 		if(flag_d) printf("ipaddr inválido!\n");
@@ -431,4 +432,25 @@ int get_redirect(char *pop_addr, char *pop_tport, char *msg)
 	strcpy(pop_tport, token);
 
 	return 0;
+}
+
+
+void free_and_close( int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo *res_pop, struct addrinfo *res_ss, int *fd_array){
+
+	if(fd_rs != -1) close(fd_rs);
+    if(res_rs != NULL) freeaddrinfo(res_rs);
+    if(fd_udp != -1) close(fd_udp);
+    if(res_udp != NULL) freeaddrinfo(res_udp);
+    if(is_root)
+    {
+    	if(fd_ss != -1) close(fd_ss);
+   		if(res_ss != NULL) freeaddrinfo(res_ss);  
+    }
+    else
+    {
+    	if(fd_pop != -1) close(fd_pop);
+   		if(res_pop != NULL) freeaddrinfo(res_pop);  
+    }   
+
+    if(fd_array != NULL) free(fd_array);
 }

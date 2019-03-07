@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     char buffer[BUFFER_SIZE];
 
     int is_root = 0;
-    int confirmation = 0;
+    int flag_control = 0;
 
 	char *msg = NULL;
 	char *token = NULL;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     if(fd_rs == -1)
     {
         if(flag_d) printf("A aplicação irá terminar...\n");
-        freeaddrinfo(res_rs);
+        if (res_rs != NULL) freeaddrinfo(res_rs);
         exit(1);
     }
 
@@ -130,9 +130,8 @@ int main(int argc, char *argv[])
                     printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
                     printf("A terminar o programa...\n");
                 }
-                freeaddrinfo(res_rs);
-                close(fd_rs);
-                free(msg);
+                if (res_rs != NULL) freeaddrinfo(res_rs);
+                if (fd_rs != -1) close(fd_rs);
                 exit(0);
             }
             msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
@@ -142,16 +141,16 @@ int main(int argc, char *argv[])
         if(!strcmp(msg, "ERROR")) //Recebeu Error
         {
             printf("Verifique que o identificador da stream está corretamente formatado\n");
-            free(msg);
-            close(fd_rs);
-            freeaddrinfo(res_rs);
+            if(msg != NULL) free(msg);
+            if(fd_rs != -1) close(fd_rs);
+            if(res_rs != NULL) freeaddrinfo(res_rs);
             exit(-1);
         }
         else
         {
             strncpy(buffer, msg, 6);
             buffer[6] = '\0';
-            free(msg);
+            printf("\n\n\n message is: %s\n\n\n", msg);
 
             if(!strcmp(buffer, "URROOT")) //caso não haja nenhuma raiz associada ao streamID
             {
@@ -169,8 +168,9 @@ int main(int argc, char *argv[])
                 if(fd_ss == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
+                    if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(res_ss != NULL) freeaddrinfo(res_ss);
                     exit(0);
                 }
 
@@ -192,8 +192,10 @@ int main(int argc, char *argv[])
                 if(fd_tcp_server == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
+                    if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(fd_ss != -1) close(fd_ss);
+                    if(res_ss != NULL) freeaddrinfo(res_ss);
                     exit(0);
                 }
 
@@ -212,20 +214,26 @@ int main(int argc, char *argv[])
                 if(fd_udp == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
-                    freeaddrinfo(res_udp);
-                    free(fd_array);
+                    if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(fd_ss != -1) close(fd_ss);
+                    if(res_ss != NULL) freeaddrinfo(res_ss);
+                    if(res_udp != NULL) freeaddrinfo(res_udp);
+                    if(fd_array != NULL) free(fd_array);
                     exit(0);
                 }
 
                 if(udp_bind(fd_udp, res_udp) == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
-                    freeaddrinfo(res_udp);
-                    free(fd_array);
+                    if(flag_d) printf("A aplicação irá terminar...\n");
+                    if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(fd_ss != -1) close(fd_ss);
+                    if(res_ss != NULL) freeaddrinfo(res_ss);
+                    if(fd_udp != -1) close(fd_udp);
+                    if(res_udp != NULL) freeaddrinfo(res_udp);
+                    if(fd_array != NULL) free(fd_array);
                     exit(0);
                 }
 
@@ -246,12 +254,13 @@ int main(int argc, char *argv[])
                         printf("Falha em obter o endereço do servidor de acesso...\n");
                         printf("A aplicação irá terminar...\n");
                     }
-                    freeaddrinfo(res_rs);
-                    close(fd_rs);
-                    free(msg); //Dúvida RG : onde é que foi alocada memória para estarmos a fazer este free?
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(fd_rs != -1) close(fd_rs);
+                    if(msg != NULL) free(msg); //Dúvida RG : onde é que foi alocada memória para estarmos a fazer este free?!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     exit(0);
                 }
-                free(msg);
+                free(msg); //Dúvida RG : onde é que foi alocada memória para estarmos a fazer este free?!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
                 //caso já exista uma raiz associada à stream, a aplicação deverá
                 ///////////// 1. solicitar ao servidor de acesso da raiz o IP e porto TCP do ponto de acesso ////////////
@@ -259,9 +268,9 @@ int main(int argc, char *argv[])
                 if(fd_udp == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
-                    freeaddrinfo(res_udp);
+                    if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);
+                    if(res_udp != NULL) freeaddrinfo(res_udp);
                     exit(0);
                 }
 
@@ -276,22 +285,24 @@ int main(int argc, char *argv[])
                             printf("Impossível comunicar com o servidor de acesso, após %d tentativas...\n", MAX_TRIES);
                             printf("A terminar o programa...\n");
                         }
-                        close(fd_rs);
-                        freeaddrinfo(res_rs);
-                        freeaddrinfo(res_udp);
+                        if(fd_rs != -1) close(fd_rs);
+                        if(res_rs != NULL) freeaddrinfo(res_rs);
+                        if(fd_udp != -1) close(fd_udp);
+                        if(res_udp != NULL) freeaddrinfo(res_udp);
                         exit(0);
                     }
                 }
 
                 //prints para verificar que está tudo ok. são para tirar depois
-                if(flag_d == 1){
+                if(flag_d == 1)
+                {
                     printf("pop_addr %s\n", pop_addr);
                     printf("pop_tport %s\n", pop_tport);
                 }
                 
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
+               
                
 
                 //Comentei o código em baixo porque não concordei - RG
@@ -318,19 +329,24 @@ int main(int argc, char *argv[])
 
                
 
-                while(confirmation == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
+                while(flag_control == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
                     if(flag_d)
                     {
                         printf("A estabelecer ligação TCP com um peer...\n");
                     }
 
+                    //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
+                    
                     fd_pop = tcp_socket_connect(pop_addr, pop_tport);
-                    if(fd_pop == -1){
+                    if(fd_pop == -1)
+                    {
                         if(flag_d) printf("A aplicação irá terminar...\n");
-                        close(fd_pop);
-                        freeaddrinfo(res_pop);
-                        freeaddrinfo(res_udp);
+                        if(fd_rs != -1) close(fd_rs);
+                        if(res_rs != NULL) freeaddrinfo(res_rs);
+                        if(fd_udp != -1) close(fd_udp);
+                        if(res_udp != NULL) freeaddrinfo(res_udp);
+                        if(res_pop != NULL) freeaddrinfo(res_pop);
                         exit(0);
                     }
 
@@ -363,18 +379,22 @@ int main(int argc, char *argv[])
                                 printf("Impossível comunicar com o servidor o peer, após %d tentativas...\n", MAX_TRIES);
                                 printf("A terminar o programa...\n");
                             }
-                            freeaddrinfo(res_rs);
-                            freeaddrinfo(res_udp);
-                            close(fd_rs);
-                            free(msg);
+                            if(flag_d) printf("A aplicação irá terminar...\n");
+                            if(fd_rs != -1) close(fd_rs);
+                            if(res_rs != NULL) freeaddrinfo(res_rs);
+                            if(fd_udp != -1) close(fd_udp);
+                            if(res_udp != NULL) freeaddrinfo(res_udp);
+                            if(fd_pop != -1) close(fd_pop);
+                            if(res_pop != NULL) freeaddrinfo(res_pop);
                             exit(0);
                         }
                         if(flag_d)
                         {
                             printf("A tentar comunicar com o peer...\n");
                         }
-                        msg = receive_confirmation(fd_ss, msg); //Assim está a fazer muitos mallocs - Dúvida RG - acrescentar um free(msg) antes desta linha.
+                        msg = receive_confirmation(fd_ss, msg); 
                     }
+
                     counter = 0; //Reset do contador, caso tenha sido possível comunicar
                     if(flag_d) 
                     {
@@ -387,7 +407,7 @@ int main(int argc, char *argv[])
                         sprintf(buffer, "WE %s\n", streamID);
                         if(!strcasecmp(msg, buffer)) //Confirma se a stream está correta 
                         {
-                            confirmation = 1;
+                            flag_control = 1;
                         }
                         else
                         {
@@ -405,10 +425,13 @@ int main(int argc, char *argv[])
                                 printf("Falha ao obter o novo ponto de acesso...\n");
                                 printf("A aplicação irá terminar...\n");
                             }
-                            free(msg); 
-                            freeaddrinfo(res_rs);
-                            freeaddrinfo(res_udp);
-                            close(fd_rs);                       
+                            if(msg != NULL) free(msg);
+                            if(fd_rs != -1) close(fd_rs);
+                            if(res_rs != NULL) freeaddrinfo(res_rs);
+                            if(fd_udp != -1) close(fd_udp);
+                            if(res_udp != NULL) freeaddrinfo(res_udp);
+                            if(fd_pop != -1) close(fd_pop);
+                            if(res_pop != NULL) freeaddrinfo(res_pop);                    
                             exit(0);
 
                         }
@@ -421,7 +444,7 @@ int main(int argc, char *argv[])
                     }                
                 }
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+                flag_control = 1;
 
 
 
@@ -437,9 +460,8 @@ int main(int argc, char *argv[])
                 if(fd_tcp_server == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
-                    freeaddrinfo(res_udp);
+                    /*if(fd_rs != -1) close(fd_rs);
+                    if(res_rs != NULL) freeaddrinfo(res_rs);*/
                     exit(0);
                 }
 
@@ -458,11 +480,23 @@ int main(int argc, char *argv[])
 
                 //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
-                newpop(fd_pop, ipaddr, tport); //era fixe meter isto a retornar um inteiro mas se calhar tem de se alterar a funcao tcp_send para retornar um inteiro tambem
+                flag_control = newpop(fd_pop, ipaddr, tport);  //retorna -1 em caso de insucesso e 0 em caso de sucesso
+
+                if(flag_control  == -1)
+                {
+                    if(flag_d)
+                    {
+                        printf("Falha ao enviar a montante o novo ponto de acesso...\n");
+                        printf("A aplicação irá terminar...\n");
+                        if(fd_rs != -1) close(fd_rs);
+                        if(res_rs != NULL) freeaddrinfo(res_rs);
+                        if(fd_array != NULL) free(fd_array);
+                        if(fd_tcp_server != -1) close(fd_tcp_server);
+                        if(res_tcp != NULL) freeaddrinfo(res_tcp);
+                        if(fd_array != NULL) free(fd_array);
+                    }
+                }
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
@@ -492,11 +526,9 @@ int main(int argc, char *argv[])
         freeaddrinfo(res_udp);
     }
 
-    if(fd_udp != -1) close(fd_udp);
-    if(fd_rs != -1) close(fd_rs);
-    if(fd_tcp_server != -1) close(fd_tcp_server);
-    if(fd_ss != -1) close(fd_ss);
-    if(fd_array != NULL) free(fd_array);
+    free_and_close(is_root, fd_rs, fd_udp, fd_pop, fd_ss, res_rs, res_udp, res_pop, res_ss, fd_array);
+
+    
 }
 
 

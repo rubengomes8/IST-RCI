@@ -59,10 +59,7 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
     n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
 
-    if(flag_d)
-    {
-        printf("Received by Root Server: %s\n", msg2);
-    }
+    printf("Received by Root Server: %s\n", msg2);
 
     free(timeout);
     return 0;
@@ -380,10 +377,17 @@ char *receive_confirmation(int fd_tcp, char *msg)
 
 int newpop(int fd_pop, char *ipaddr, char *tport)
 {
+    int n;
+
     char buffer[NEWPOP_LEN];
 
     sprintf(buffer, "NP %s:%s\n", ipaddr, tport);
-    tcp_send(NEWPOP_LEN, buffer, fd_pop);
+    n = tcp_send(NEWPOP_LEN, buffer, fd_pop);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro durante o envio da mensagem NEWPOP.\n");
+        return -1;
+    }
 
     return 0; //mudar isto
 
