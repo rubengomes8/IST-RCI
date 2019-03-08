@@ -15,20 +15,21 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     int i;
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
-
+    //Neste ciclo, 
     while(1)
     {
 
         FD_ZERO(&fd_read_set);
         FD_ZERO(&fd_read_write_set);
 
-        //Prepara os file descriptors do servidor de acesso e do stdin para leitura
+        //Prepara os file descriptors do servidor de acesso e do stdin para leitura 
         FD_SET(fd_udp, &fd_read_set);
         FD_SET(0, &fd_read_set);
         maxfd = fd_udp;
+        //Prepara os file descriptors do servidor tcp que aceita ligações de outros pares que servem para leitura
         FD_SET(fd_tcp_server, &fd_read_set);
         maxfd = max(maxfd, fd_tcp_server);
-        //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante
+        //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante que podem servir para escrita e para leitura
         fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
 
 
@@ -52,7 +53,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             }
         }
 
-        //Aceita ou redireciona novas ligações
+        //Se chegar uma nova ligação a jusante -> Aceita ou redireciona novas ligações consoante a ocupação
         if(FD_ISSET(fd_tcp_server, &fd_read_set))
         {
             if(flag_d) printf("Novo pedido de conexão...\n");
@@ -62,16 +63,18 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             }
             else if(tcp_sessions == tcp_occupied)
             {
+                //Encontrar/Obter o ip e o porto para redirecionar
                 redirect(fd_tcp_server, "127.0.0.1", "57000");
             }
         }
 
-        //Servidor de acessos
+        //Servidor de acessos - fizeram um pedido POPREQ
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
             popresp(fd_udp, streamID, "127.0.0.1", "58001");
         }
 
+        //O utilizador introduziu um comando de utilizador
         if(FD_ISSET(0, &fd_read_set))
         {
             exit_flag = read_terminal(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied);
@@ -272,7 +275,7 @@ void welcome(int tcp_sessions, int *tcp_occupied, int fd_tcp_server, int *fd_arr
         if (flag_d)
         {
             printf("Pedido de ligação aceite...\n");
-            printf("A comunicar com o peer...\n");
+            printf("A enviar uma mensagem WELCOME ao peer...\n");
         }
         sprintf(buffer, "WE %s\n", streamID);
         ptr = buffer;

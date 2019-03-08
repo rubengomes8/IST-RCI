@@ -356,6 +356,34 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
 	return has_stream;
 }
 
+char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport){
+	int counter = 0;
+	char *msg = NULL;
+
+	msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
+
+    //Enquanto receber NULL, significa que não houve resposta do servidor de raízes
+    while(msg == NULL)
+    {
+        counter++;
+        if(counter == MAX_TRIES)
+        {
+            if(flag_d)
+            {
+                printf("\n");
+                printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
+                printf("A terminar o programa...\n");
+            }
+            if (res_rs != NULL) freeaddrinfo(res_rs);
+            if (fd_rs != -1) close(fd_rs);
+            exit(0);
+        }
+        msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
+    }
+    return msg;
+}
+
+
 void stream_id_to_lowercase(char *streamID)
 {
 	int len, i;
