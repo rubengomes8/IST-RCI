@@ -1,6 +1,9 @@
 #ifndef RCI_ROOT_SERVER_H
 #define RCI_ROOT_SERVER_H
 
+
+#define MAX_TRIES 10 //máximo de tentativas de comunicação falhadas antes de o programa terminar
+
 #define REMOVE_LEN 72
 #define DUMP_LEN 6
 #define STREAMS_LEN 10000 //valor arbitrário para o comprimento da mensagem STREAMS, recebida pelo servidor de raízes
@@ -13,7 +16,7 @@
 #define REDIRECT_LEN 25 //comprimento máximo da mensagem REDIRECT
 #define NEWPOP_LEN 	25//comprimento máximo da mensagem NEWPOP 2+1+15+1+5+1
 
-#define TIMEOUT_SECS 1
+#define TIMEOUT_SECS 1000
 #define TIMEOUT_USECS 0
 
 #include "tcp.h"

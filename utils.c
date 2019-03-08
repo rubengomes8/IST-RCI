@@ -380,20 +380,26 @@ void stream_id_to_lowercase(char *streamID)
 	return;
 }
 
-int get_root_access_server(char *rasaddr, char *rasport, char *msg)
+void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addrinfo *res_rs, int fd_rs)
 {
 	char *token = NULL;
-	//printf("Message: %s\n", msg);
 	token = strtok(msg, " ");
 
 	token = strtok(NULL, " ");
 
 	token = strtok(NULL, ":");
-	//printf("token: %s\n", token);
 	if(token == NULL)
 	{
 		if(flag_d) printf("ipaddr inválido!\n");
-		return -1;
+		if(flag_d)
+		{
+			printf("Falha em obter o endereço do servidor de acesso...\n");
+			printf("A aplicação irá terminar...\n");
+		}
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(fd_rs != -1) close(fd_rs);
+		if(msg != NULL) free(msg);
+		exit(0);
 	}
 	strcpy(rasaddr, token);
 
@@ -401,11 +407,19 @@ int get_root_access_server(char *rasaddr, char *rasport, char *msg)
 	if(token == NULL)
 	{
 		if(flag_d) printf("uport inválido!\n");
-		return -1;
+		if(flag_d)
+		{
+			printf("Falha em obter o endereço do servidor de acesso...\n");
+			printf("A aplicação irá terminar...\n");
+		}
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(fd_rs != -1) close(fd_rs);
+		if(msg != NULL) free(msg);
+		exit(0);
 	}
 	strcpy(rasport, token);
 
-	return 0;
+	free(msg);
 }
 
 int get_redirect(char *pop_addr, char *pop_tport, char *msg)
@@ -454,3 +468,163 @@ void free_and_close( int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, 
 
     if(fd_array != NULL) free(fd_array);
 }
+
+/////////////////////////////////////// Funções para coisas que antes estavam no iamroot ////////////////////////////////
+//Se calhar não é o melhor sítio
+
+int source_server_connect(int fd_rs, struct addrinfo *res_rs, struct addrinfo *res_ss, char *streamIP, char *streamPORT)
+{
+	int fd_ss = -1;
+
+    if(flag_d)
+    {
+        printf("A estabelecer ligação TCP com o servidor fonte...\n");
+    }
+
+    fd_ss = tcp_socket_connect(streamIP, streamPORT);
+    if(fd_ss == -1)
+    {
+        if(flag_d) printf("A aplicação irá terminar...\n");
+        if(fd_rs != -1) close(fd_rs);
+        if(res_rs != NULL) freeaddrinfo(res_rs);
+        if(res_ss != NULL) freeaddrinfo(res_ss);
+        exit(0);
+    }
+
+    if(flag_d)
+    {
+        printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
+    }
+
+    return fd_ss;
+}
+
+int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, struct addrinfo *res_ss, char *ipaddr)
+{
+	int fd_tcp_server = -1;
+
+
+	//Cria ponto de comunicação no porto tport
+	if(flag_d)
+	{
+		printf("A instalar servidor TCP para transmissão a jusante...\n");
+	}
+
+	fd_tcp_server = tcp_bind(tport);
+	if(fd_tcp_server == -1)
+	{
+		if(flag_d) printf("A aplicação irá terminar...\n");
+		if(fd_rs != -1) close(fd_rs);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(fd_ss != -1) close(fd_ss);
+		if(res_ss != NULL) freeaddrinfo(res_ss);
+		exit(0);
+	}
+
+	if(flag_d)
+	{
+		printf("Servidor TCP para comunicação a jusante instalado com sucesso, no endereço %s:%s\n", ipaddr, tport);
+	}
+
+	return fd_tcp_server;
+}
+
+int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_ss)
+{
+	int *fd_array;
+
+	fd_array = fd_array_init(tcp_sessions);
+	if(fd_array == NULL)
+	{
+		if(fd_rs != -1) close(fd_rs);
+		if(fd_ss != -1) close(fd_ss);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		exit(0);
+	}
+
+	return fd_array;
+}
+
+int install_access_server(int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_ss,
+		struct addrinfo **res_udp, char *uport, int *fd_array)
+{
+	int fd_udp;
+
+	fd_udp = udp_socket(NULL, uport, res_udp);
+	if(fd_udp == -1)
+	{
+		if(flag_d) printf("A aplicação irá terminar...\n");
+		if(fd_rs != -1) close(fd_rs);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(fd_ss != -1) close(fd_ss);
+		if(res_ss != NULL) freeaddrinfo(res_ss);
+		if(*res_udp != NULL) freeaddrinfo(*res_udp);
+		if(fd_array != NULL) free(fd_array);
+		exit(0);
+	}
+
+	if(udp_bind(fd_udp, *res_udp) == -1)
+	{
+		if(flag_d) printf("A aplicação irá terminar...\n");
+		if(fd_rs != -1) close(fd_rs);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(fd_ss != -1) close(fd_ss);
+		if(res_ss != NULL) freeaddrinfo(res_ss);
+		if(fd_udp != -1) close(fd_udp);
+		if(*res_udp != NULL) freeaddrinfo(*res_udp);
+		if(fd_array != NULL) free(fd_array);
+		exit(0);
+	}
+
+	return fd_udp;
+}
+
+int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, int fd_rs, struct addrinfo *res_rs,
+ char *pop_addr, char *pop_tport)
+{
+	int fd_udp = -1;
+	int counter = 0;
+
+	fd_udp = udp_socket(rasaddr, rasport, res_udp);
+	if(fd_udp == -1)
+	{
+		if(flag_d) printf("A aplicação irá terminar...\n");
+		if(fd_rs != -1) close(fd_rs);
+		if(res_rs != NULL) freeaddrinfo(res_rs);
+		if(*res_udp != NULL) freeaddrinfo(*res_udp);
+		exit(0);
+	}
+
+	while(popreq(fd_udp, *res_udp, pop_addr, pop_tport) == -1)
+	{
+		counter++;
+		if(counter == MAX_TRIES)
+		{
+			if(flag_d)
+			{
+				printf("\n");
+				printf("Impossível comunicar com o servidor de acesso, após %d tentativas...\n", MAX_TRIES);
+				printf("A terminar o programa...\n");
+			}
+			if(fd_rs != -1) close(fd_rs);
+			if(res_rs != NULL) freeaddrinfo(res_rs);
+			if(fd_udp != -1) close(fd_udp);
+			if(*res_udp != NULL) freeaddrinfo(*res_udp);
+			exit(0);
+		}
+	}
+
+	return fd_udp;
+}
+
+
+
+
+
+
+
+
+
+
+

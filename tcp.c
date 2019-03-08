@@ -167,7 +167,7 @@ int *fd_array_init(int tcp_sessions)
     if(fd_array == NULL)
     {
         if(flag_d) fprintf(stderr, "Error: fd_array_init: malloc: %s\n", strerror(errno));
-        exit(1);
+        return NULL;
     }
 
     for(i = 0; i<tcp_sessions; i++)

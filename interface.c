@@ -6,7 +6,7 @@ extern int flag_b;
 extern int ascii;
 
 void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
-        int tcp_sessions, int tcp_occupied, int fd_udp)
+        int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server)
 {
     char buffer[BUFFER_SIZE];
 
@@ -14,11 +14,30 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     fd_set fd_read_set;
     int exit_flag = 0;
 
+    int teste = 0;
+    char *ptr;
+    int fdarr[1];
+    fdarr[0] = -1;
+
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
 
     while(1)
     {
+       /* if(teste == 1)
+        {
+
+
+            //Teste
+            new_connection(fd_tcp_server, fdarr);
+            sprintf(buffer, "WE %s\n", streamID);
+            ptr = buffer;
+            printf("%d\n", strlen(buffer));
+            printf("%d\n", strlen(ptr));
+            tcp_send(strlen(ptr), ptr, fdarr[0]);
+        }*/
+
+
         FD_ZERO(&fd_read_set);
 
         //Prepara os file descriptors do servidor de acesso e do stdin para leitura
@@ -39,6 +58,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             //Dar ip e porta onde ligar
             //ISTO TEM DE PASSAR A RETORNAR O ADDR E ADDRLEN DE QUEM ENVIA A MENSAGEM
             popresp(fd_udp, streamID, "tpaddr", "tport");
+           // teste = 1;
         }
         else if(FD_ISSET(0, &fd_read_set))
         {
