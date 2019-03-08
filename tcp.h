@@ -22,6 +22,7 @@ int tcp_send(int nbytes, char *ptr, int fd);
 int tcp_receive(int nbytes, char *ptr, int fd);
 
 int tcp_bind(char *service, int tcp_sessions);
+int tcp_accept(int fd_tcp_server);
 int *fd_array_init(int tcp_sessions);
 void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd, int tcp_sessions);
 int new_connection(int fd, int *fd_array, int tcp_sessions);

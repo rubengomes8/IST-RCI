@@ -10,6 +10,7 @@
 
 
 //Defines relativos aos valores default
+#define IPADDR "127.0.0.1"
 #define TPORT "58000"
 #define UPORT "58000"
 #define RSADDR "193.136.138.142"
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
 {
     ///////////////////////////////////// Argumentos de entrada ////////////////////////////////////////////////////////
     char streamID[STREAM_ID_SIZE]; //mystream:193.136.138.142:59000 (exemplo)
-    char ipaddr[IP_LEN + 1]; ipaddr[0] = '\0';
+    char ipaddr[IP_LEN + 1] = IPADDR; //endereço ip do computador
     char tport[PORT_LEN + 1] = TPORT; //tport - porto TCP onde a app aceita sessões de outros pares a jusante
     char uport[PORT_LEN + 1] = UPORT; //uport - porto UDP do servidor de acesso
     char rsaddr[IP_LEN + 1] = RSADDR; //endereço IP do servidor de raízes
@@ -94,7 +95,6 @@ int main(int argc, char *argv[])
     int welcome = 0;
 
 	char *msg = NULL;
-	char *token = NULL;
 
 	//Proteger contra sigpipe
 
@@ -105,18 +105,11 @@ int main(int argc, char *argv[])
 
 	if(sigaction(SIGPIPE, &act, NULL) == -1) exit(1);*/
 
-
-
     //Lê e verifica os restantes argumentos
     has_stream = arguments_reading(argc, argv, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops,
             &tsecs, &flag_h, streamID, streamNAME, streamIP, streamPORT);
-    if(ipaddr[0] == '\0')
-    {
-        if(flag_d) printf("É necessário especificar ipaddr. Na invocação do programa utilize: -i ipaddr\n");
-        exit(1);
-    }
 
-    //Se a flag -h estiver ative, dá uma sinopse dos comandos possíveis
+    //Se a flag -h estiver ativa, dá uma sinopse dos comandos possíveis
     if(flag_h == 1)
     {
         sinopse();
@@ -128,22 +121,16 @@ int main(int argc, char *argv[])
     fd_rs = udp_socket(rsaddr, rsport, &res_rs);
     if(fd_rs == -1)
     {
-        if(flag_d) fprintf(stdout, "Falha ao ligar-se ao servidor de raízes...\nA aplicação irá terminar...\n");
+        if(flag_d) printf("Falha ao ligar-se ao servidor de raízes...\nA aplicação irá terminar...\n");
         if (res_rs != NULL) freeaddrinfo(res_rs);
-        exit(1);
+        exit(0);
     }
 
-    printf("%d\n", fd_rs);
     if(flag_d) fprintf(stdout, "Ligação ao servidor de raízes efetuada com sucesso!\n");
-
-
-
 
 
     if(has_stream)
     {
-
-
         ///////////////////////////////// Descobre se é raíz ou não /////////////////////////////////////////////////////
         msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
         //Enquanto receber NULL, significa que não houve resposta do servidor de raízes
@@ -172,7 +159,7 @@ int main(int argc, char *argv[])
         //Verifica se a resposta a WHOISROOT foi ERROR, URROOT ou ROOTIS
         if(!strcmp(msg, "ERROR")) //Recebeu Error
         {
-            printf("Verifique que o identificador da stream está corretamente formatado\n");
+            printf("Verifique se o identificador da stream está correto!\n");
             if(msg != NULL) free(msg);
             if(fd_rs != -1) close(fd_rs);
             if(res_rs != NULL) freeaddrinfo(res_rs);
@@ -183,19 +170,18 @@ int main(int argc, char *argv[])
             strncpy(buffer, msg, 6);
             buffer[6] = '\0';
 
-            if(!strcmp(buffer, "URROOT")) //caso não haja nenhuma raiz associada ao streamID
+            if(!strcmp(buffer, "URROOT"))
             {
                 if(msg != NULL) free(msg);
-                //aplicação fica registada como sendo a raiz da nova árvore e escoamento
+                //A aplicação fica registada como sendo a raiz da nova árvore e escoamento
                 is_root = 1;
-
 
                 //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
                 fd_ss = source_server_connect(fd_rs, res_rs, res_ss, streamIP, streamPORT);
 
 
-                ////////////////// 2. instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
-                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, res_ss, ipaddr);
+                ////////////////// 2. Instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
+                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, res_ss, ipaddr, tcp_sessions);
 
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
@@ -219,39 +205,6 @@ int main(int argc, char *argv[])
                 ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////////////
                 fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport);
 
-                //prints para verificar que está tudo ok. são para tirar depois
-                if(flag_d == 1)
-                {
-                    printf("pop_addr %s\n", pop_addr);
-                    printf("pop_tport %s\n", pop_tport);
-                }
-
-
-                //Primeiro temos de ligar ao servidor TCP
-                //Depois de estarmos ligados temos de esperar por uma das duas mensagens: WELCOME ou REDIRECT
-                //Em caso de WELCOME está tudo ok e continuamos
-                //Em caso de REDIRECT, ele vai dar um novo ponto de acesso
-                //Neste caso, desligamos a atual ligação TCP e ligamo-nos a uma nova
-                //Repetimos o processo até receber WELCOME
-               
-               
-
-                //Comentei o código em baixo porque não concordei - RG
-                /*fd_ss = tcp_socket_connect("127.0.0.1", "58000");
-                if(fd_ss == -1)
-                {
-                    if(flag_d) printf("A aplicação irá terminar...\n");
-                    close(fd_rs);
-                    freeaddrinfo(res_rs);
-                    freeaddrinfo(res_udp);
-                    exit(0);
-                }
-
-                if(flag_d)
-                {
-                    printf("Ligação com o servidor fonte estabelecida com sucesso!\n");
-                }*/
-
                 while(welcome == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
                     if(flag_d)
@@ -259,174 +212,32 @@ int main(int argc, char *argv[])
                         printf("A estabelecer ligação TCP com um peer...\n");
                     }
 
-                    //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
-
-                    //pop_addr e pop_tport em vez das strings com os números
-                    fd_pop = tcp_socket_connect("127.0.0.1", "58001");
-                    if(fd_pop == -1)
-                    {
-                        if(flag_d) printf("A aplicação irá terminar...\n");
-                        if(fd_rs != -1) close(fd_rs);
-                        if(res_rs != NULL) freeaddrinfo(res_rs);
-                        if(fd_udp != -1) close(fd_udp);
-                        if(res_udp != NULL) freeaddrinfo(res_udp);
-                        if(res_pop != NULL) freeaddrinfo(res_pop);
-                        exit(0);
-                    }
-
-                    if(flag_d)
-                    {
-                        printf("Ligação com o par a montante estabelecida com sucesso!\n");
-                    }
-
-                     /////////////////////////// 3. aguardar confirmação de adesão ///////////////////////////////////////////
-
-                    //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
-                    //Ou então REDIRECT RE<SP><ipaddr>:<tport><LF>
-
-                    //Recebe NULL quando há erro. Nesse caso temos de tentar de novo
-                    if(flag_d)
-                    {
-                        printf("A tentar comunicar com o peer...\n");
-                    }
-
-                    //Só funciona quando na interface.c respondermos
-
-                    msg = receive_confirmation(fd_pop, msg);
-                    while(msg == NULL)
-                    {
-                        counter++;
-                        if(counter == MAX_TRIES)
-                        {
-                            if(flag_d)
-                            {
-                                printf("\n");
-                                printf("Impossível comunicar com o peer, após %d tentativas...\n", MAX_TRIES);
-                                printf("A terminar o programa...\n");
-                            }
-                            if(flag_d) printf("A aplicação irá terminar...\n");
-                            if(fd_rs != -1) close(fd_rs);
-                            if(res_rs != NULL) freeaddrinfo(res_rs);
-                            if(fd_udp != -1) close(fd_udp);
-                            if(res_udp != NULL) freeaddrinfo(res_udp);
-                            if(fd_pop != -1) close(fd_pop);
-                            if(res_pop != NULL) freeaddrinfo(res_pop);
-                            exit(0);
-                        }
-                        if(flag_d)
-                        {
-                            printf("A tentar comunicar com o peer...\n");
-                        }
-                        msg = receive_confirmation(fd_pop, msg);
-                    }
-
-                    counter = 0; //Reset do contador, caso tenha sido possível comunicar
-                    if(flag_d) 
-                    {
-                        printf("Mensagem recebida pelo peer: %s\n", msg);
-                    }
-
-                    strncpy(buffer, msg, 2);
-                    buffer[2] = '\0';
-                    if(!strcmp(buffer, "WE")) //Recebeu uma mensagem  Welcome
-                    {
-                        sprintf(buffer, "WE %s\n", streamID);
-                        if(!strcasecmp(msg, buffer)) //Confirma se a stream está correta 
-                        {
-                            welcome = 1;
-                        }
-                        else
-                        {
-                            //Recebeu um WELCOME mas com a stream incorreta
-                            //Depois temos de ver melhor qual o progresso do programa nesta situação.
-                        }
-                        free(msg);
-                    }
-                    else if(!strcmp(buffer, "RE")) //Recebeu uma mensagem Redirect
-                    {
-                        if(get_redirect(pop_addr, pop_tport, msg) == -1)
-                        {
-                            if(flag_d)
-                            {
-                                printf("Falha ao obter o novo ponto de acesso...\n");
-                                printf("A aplicação irá terminar...\n");
-                            }
-                            if(msg != NULL) free(msg);
-                            if(fd_rs != -1) close(fd_rs);
-                            if(res_rs != NULL) freeaddrinfo(res_rs);
-                            if(fd_udp != -1) close(fd_udp);
-                            if(res_udp != NULL) freeaddrinfo(res_udp);
-                            if(fd_pop != -1) close(fd_pop);
-                            if(res_pop != NULL) freeaddrinfo(res_pop);                    
-                            exit(0);
-
-                        }
-                        else
-                        {
-                            free(msg);
-                            close(fd_pop);
-                            //Irá percorrer o ciclo outra vez, de forma a aderir a um novo ponto de acesso
-                            
-                        }
-                    }
-                }
-                /////////////////////////////////////////////////////////////////////////////////////////////////////////
-                welcome = 1;
+                    //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
+                    fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, res_udp, res_pop);
 
 
-
-
-                ////////////////// 4. Instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
-                //Cria ponto de comunicação no porto tport
-                if(flag_d)
-                {
-                    printf("A instalar servidor TCP para transmissão a jusante...\n");
+                    //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
+                    welcome = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, res_udp, fd_pop, res_pop,
+                            streamID);
                 }
 
-                fd_tcp_server = tcp_bind(tport, tcp_sessions);
-                if(fd_tcp_server == -1)
-                {
-                    if(flag_d) printf("A aplicação irá terminar...\n");
-                    /*if(fd_rs != -1) close(fd_rs);
-                    if(res_rs != NULL) freeaddrinfo(res_rs);*/
-                    exit(0);
-                }
 
-                if(flag_d)
-                {
-                    printf("Servidor TCP para comunicação a jusante instalado com sucesso, no endereço %s:%s\n", ipaddr, tport);
-                }
+
+                ////////////////// 4. Instala servidor TCP para o ponto de acesso a jusante ////////////////////////////
+                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, res_ss, ipaddr, tcp_sessions);
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
-                fd_array = fd_array_init(tcp_sessions);
-                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+                fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs, res_ss);
 
 
-
-                //////////////// 5. Enviar a montante a informação do novo ponto de acesso //////////////////////////////
-
+                //////////////// 5. Envia a montante a informação do novo ponto de acesso //////////////////////////////
                 //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
-
-
-                if(newpop(fd_pop, ipaddr, tport)  == -1) //retorna -1 em caso de insucesso e 0 em caso de sucesso
-                {
-                    if(flag_d)
-                    {
-                        printf("Falha ao enviar a montante o novo ponto de acesso...\n");
-                        printf("A aplicação irá terminar...\n");
-                        if(fd_rs != -1) close(fd_rs);
-                        if(res_rs != NULL) freeaddrinfo(res_rs);
-                        if(fd_array != NULL) free(fd_array);
-                        if(fd_tcp_server != -1) close(fd_tcp_server);
-                        if(res_tcp != NULL) freeaddrinfo(res_tcp);
-                        if(fd_array != NULL) free(fd_array);
-                    }
-                }
-                /////////////////////////////////////////////////////////////////////////////////////////////////////////
+                send_new_pop(fd_pop, ipaddr, tport, fd_rs, res_rs, fd_tcp_server, res_tcp, fd_udp, res_udp, fd_array);
 
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
-                interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp);
+                interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
+                        fd_tcp_server, fd_array);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }

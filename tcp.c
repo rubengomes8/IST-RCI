@@ -48,19 +48,6 @@ int tcp_send(int nbytes, char *ptr, int fd)
 {
   int nleft, nwritten;
 
-  //Certificação de que a string acaba com \0
-/*  if(nbytes < BUFFER_SIZE)
-  {
-      ptr[nbytes] = '\0';
-  }
-  else
-  {
-      ptr[BUFFER_SIZE] = '\0';
-  }
-
-  //Passa a ter de enviar mais um byte, o \0
-  nbytes++;*/
-  //nº de bytes que falta enviar é igual ao nº total de bytes
   nleft = nbytes;
 
   //Envio
@@ -196,6 +183,23 @@ void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd, int tcp_sessions)
     }
 }
 
+int tcp_accept(int fd_server)
+{
+    struct sockaddr_in addr;
+    unsigned int addrlen;
+    int fd;
+
+    addrlen= sizeof(addr);
+
+    if((fd = accept(fd_server, (struct sockaddr*)&addr, &addrlen)) == -1)
+    {
+        if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
+        return -1;
+    }
+
+    return fd;
+}
+
 int new_connection(int fd, int *fd_array, int tcp_sessions)
 {
     struct sockaddr_in addr;
@@ -208,7 +212,8 @@ int new_connection(int fd, int *fd_array, int tcp_sessions)
 
     addrlen = sizeof(addr);
     //Recebe um novo pedido de ligação
-    if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
+    if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1)
+    {
         if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
         return -1;
     }

@@ -8,37 +8,16 @@ extern int ascii;
 void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array)
 {
-    char buffer[BUFFER_SIZE];
-
     int maxfd, counter;
     fd_set fd_read_set;
     fd_set fd_read_write_set;
     int exit_flag = 0;
-
-    int teste = 0;
-    char *ptr;
-
     int i;
-    int nova_ligacao = 0; //indica que há uam nova ligação com a qual lidar, quando está a 1
-
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
 
     while(1)
     {
-       /* if(teste == 1)
-        {
-
-
-            //Teste
-            new_connection(fd_tcp_server, fdarr);
-            sprintf(buffer, "WE %s\n", streamID);
-            ptr = buffer;
-            printf("%d\n", strlen(buffer));
-            printf("%d\n", strlen(ptr));
-            tcp_send(strlen(ptr), ptr, fdarr[0]);
-        }*/
-
 
         FD_ZERO(&fd_read_set);
         FD_ZERO(&fd_read_write_set);
@@ -51,7 +30,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         maxfd = max(maxfd, fd_tcp_server);
         //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante
         fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
-      //  fd_array_set(fd_array, &fd_write_set, %maxfd, tcp_sessions);
 
 
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, &fd_read_write_set,  (struct timeval *)NULL);
@@ -69,64 +47,29 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             {
                 if(FD_ISSET(fd_array[i], &fd_read_write_set))
                 {
-                    /*if(nova_ligacao)
-                    {
-                        if(tcp_sessions - tcp_occupied > 0)
-                        {
-                            //Há sessões disponíveis
-                            //Enviar WELCOME
-                        }
-                        else if(tcp_sessions == tcp_occupied)
-                        {
-                            //Não há sessões disponíveis
-                            //Enviar REDIRECT
-                        }
-                        nova_ligacao = 0;
-                    }*/
-
+                    //Enviar e receber mensagens
                 }
             }
         }
 
-        //Aceita novas ligações
+        //Aceita ou redireciona novas ligações
         if(FD_ISSET(fd_tcp_server, &fd_read_set))
         {
             if(flag_d) printf("Novo pedido de conexão...\n");
-            i = new_connection(fd_tcp_server, fd_array, tcp_sessions);
-            if(i == -1)
+            if(tcp_sessions > tcp_occupied)
             {
-                if(flag_d) printf("Novo pedido de ligação recusado...\n");
+                welcome(tcp_sessions, &tcp_occupied, fd_tcp_server, fd_array, streamID);
             }
-            else
+            else if(tcp_sessions == tcp_occupied)
             {
-                if(tcp_sessions - tcp_occupied > 0)
-                {
-                    if(flag_d)
-                    {
-                        printf("Pedido de ligação aceite...\n");
-                        printf("A comunicar com o peer...\n");
-                    }
-                    sprintf(buffer, "WE %s\n", streamID);
-                    ptr = buffer;
-                    tcp_send(strlen(ptr), ptr, fd_array[i]); //não poder ser 0
-                    if(flag_d)
-                    {
-                        printf("Mensagem enviada ao peer: %s\n", ptr);
-                    }
-                }
-
+                redirect(fd_tcp_server, "127.0.0.1", "57000");
             }
         }
 
-
-
+        //Servidor de acessos
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
-            //Servidor de acessos
-            //Dar ip e porta onde ligar
-            //ISTO TEM DE PASSAR A RETORNAR O ADDR E ADDRLEN DE QUEM ENVIA A MENSAGEM
-            popresp(fd_udp, streamID, "tpaddr", "tport");
-           // teste = 1;
+            popresp(fd_udp, streamID, "127.0.0.1", "58001");
         }
 
         if(FD_ISSET(0, &fd_read_set))
@@ -138,26 +81,61 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
 }
 
 void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char* ipaddr, char *uport,
-        char *tport, int tcp_sessions, int tcp_occupied, int fd_udp)
+        char *tport, int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array)
 {
     int maxfd, counter;
     fd_set fd_read_set;
+    fd_set fd_read_write_set;
     int exit_flag = 0;
+    int i;
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
     while(1)
     {
         FD_ZERO(&fd_read_set);
-
+        FD_ZERO(&fd_read_write_set);
         FD_SET(0, &fd_read_set);
         maxfd = 0;
+        FD_SET(fd_tcp_server, &fd_read_set);
+        maxfd = max(maxfd, fd_tcp_server);
+        fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
 
-        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval*)NULL);
+
+
+
+
+        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, &fd_read_write_set, (struct timeval*)NULL);
         if(counter <= 0)
         {
             if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
             return;
+        }
+
+        //Escreve para os pares TCP a jusante
+        for(i = 0; i<tcp_sessions; i++)
+        {
+            if(fd_array[i] != -1)
+            {
+                if(FD_ISSET(fd_array[i], &fd_read_write_set))
+                {
+                    //Enviar e receber mensagens
+                }
+            }
+        }
+
+        //Aceita ou redireciona novas ligações
+        if(FD_ISSET(fd_tcp_server, &fd_read_set))
+        {
+            if(flag_d) printf("Novo pedido de conexão...\n");
+            if(tcp_sessions > tcp_occupied)
+            {
+                welcome(tcp_sessions, &tcp_occupied, fd_tcp_server, fd_array, streamID);
+            }
+            else if(tcp_sessions == tcp_occupied)
+            {
+                redirect(fd_tcp_server, "127.0.0.1", "57000");
+            }
         }
 
         if(FD_ISSET(0, &fd_read_set))
@@ -275,4 +253,64 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
     }
 
     return 0;
+}
+
+void welcome(int tcp_sessions, int *tcp_occupied, int fd_tcp_server, int *fd_array, char *streamID)
+{
+    char buffer[BUFFER_SIZE];
+    char *ptr;
+    int i = -1;
+
+
+    i = new_connection(fd_tcp_server, fd_array, tcp_sessions);
+    if (i == -1)
+    {
+        if (flag_d) printf("Novo pedido de ligação recusado...\n");
+    }
+    else
+    {
+        if (flag_d)
+        {
+            printf("Pedido de ligação aceite...\n");
+            printf("A comunicar com o peer...\n");
+        }
+        sprintf(buffer, "WE %s\n", streamID);
+        ptr = buffer;
+        tcp_send(strlen(ptr), ptr, fd_array[i]);
+        if (flag_d)
+        {
+            printf("Mensagem enviada ao peer: %s\n", ptr);
+        }
+        (*tcp_occupied)++;
+    }
+
+}
+
+void redirect(int fd_tcp_server, char *ip, char *port)
+{
+    int refuse_fd = -1;
+    char buffer[BUFFER_SIZE];
+    char* ptr;
+
+    refuse_fd = tcp_accept(fd_tcp_server);
+    if(refuse_fd == -1)
+    {
+        if(flag_d) printf("Falha ao aceitar o novo peer...\n");
+    }
+    else
+    {
+        if(flag_b)
+        {
+            printf("A aplicação já não tem capacidade para aceitar novas ligações a jusante...\n");
+            printf("A redirecionar o peer...\n");
+        }
+        //Dar um endereço válido aqui
+        sprintf(buffer, "RE %s:%s\n", ip, port);
+        ptr = buffer;
+        tcp_send(strlen(ptr), ptr, refuse_fd);
+        if(flag_d)
+        {
+            printf("Mensagem enviada ao peer: %s\n", ptr);
+        }
+    }
 }

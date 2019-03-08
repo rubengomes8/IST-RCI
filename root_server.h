@@ -16,7 +16,7 @@
 #define REDIRECT_LEN 25 //comprimento máximo da mensagem REDIRECT
 #define NEWPOP_LEN 	25//comprimento máximo da mensagem NEWPOP 2+1+15+1+5+1
 
-#define TIMEOUT_SECS 1000
+#define TIMEOUT_SECS 10
 #define TIMEOUT_USECS 0
 
 #include "tcp.h"

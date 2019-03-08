@@ -79,6 +79,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     int maxfd;
     fd_set fdSet;
 
+    //Aloca timeout
     timeout = (struct timeval *)malloc(sizeof(struct timeval));
     if(timeout == NULL)
     {
@@ -91,7 +92,6 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     addrlen = sizeof(addr);
 
-    //solicitar ao root_server o endereço IP e porto UDP do root_access_server associado ao streamID
     msg = (char*) malloc(sizeof(char)*WIR_LEN);
     if(msg == NULL)
     {
@@ -99,17 +99,13 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
         return NULL;
     }
 
-    //Composição da mensagem a ser enviada
+    //Pergunta ao servidor de raizes quem é a raiz
     sprintf(msg, "WHOISROOT %s %s:%s\n", streamID, ipaddr, uport);
     msg_len = strlen(msg);
 
-    if(flag_d)
-    {
-        printf("A comunicar com o servidor de raízes...\n");
-        printf("Mensagem enviada: %s\n", msg);
-    }
-
+    if(flag_d) printf("A comunicar com o servidor de raízes...\n");
     udp_send(fd_rs, msg, msg_len, 0, res_rs);
+    if(flag_d) printf("Mensagem enviada: %s\n", msg);
     free(msg);
 
     msg2 = (char*) malloc(sizeof(char)*RIS_LEN);
@@ -132,7 +128,6 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
         free(timeout);
         return NULL;
     }
-
 
 
     n = RIS_LEN; //Máximo comprimento da mensagem que pode receber
@@ -276,7 +271,6 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
         printf("Mensagem recebida de um cliente iamroot: %s\n", msg);
     }
 
-    printf("msg: %s\n", msg);
     if(strcmp(msg, "POPREQ\n") != 0)
     {
         if(flag_d) printf("Mensagem inválida!\n");
@@ -305,8 +299,6 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 //Retorna NULL se não receber resposta
 char *receive_confirmation(int fd_tcp, char *msg)
 {
-    int msg_len;
-    int n;
     struct timeval *timeout = NULL;
     int counter = 0;
     int maxfd;
@@ -334,7 +326,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
     timeout->tv_usec = TIMEOUT_USECS;
 
 
-   /* FD_ZERO(&fdSet);
+    FD_ZERO(&fdSet);
     FD_SET(fd_tcp, &fdSet);
     maxfd = fd_tcp;
 
@@ -346,7 +338,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
         free(timeout);
         free(msg);
         return NULL;
-    }*/
+    }
 
     ptr = msg;
     nread = tcp_receive(WELCOME_LEN, ptr, fd_tcp);
@@ -367,10 +359,6 @@ char *receive_confirmation(int fd_tcp, char *msg)
     }
 
     msg[nread] = '\0';
-    if(flag_d)
-    {
-        printf("Mensagem recebida do peer: %s\n", msg);
-    }
 
     free(timeout);
     return msg;
@@ -383,13 +371,15 @@ int newpop(int fd_pop, char *ipaddr, char *tport)
     char buffer[NEWPOP_LEN];
 
     sprintf(buffer, "NP %s:%s\n", ipaddr, tport);
-    n = tcp_send(NEWPOP_LEN, buffer, fd_pop);
+    n = tcp_send(strlen(buffer), buffer, fd_pop);
     if(n == -1)
     {
         if(flag_d) printf("Erro durante o envio da mensagem NEWPOP.\n");
         return -1;
     }
 
-    return 0; //mudar isto
+    if(flag_d) printf("Mensagem enviada a montante: %s\n", buffer);
+
+    return 0;
 
 }
