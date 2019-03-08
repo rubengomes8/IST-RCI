@@ -407,7 +407,8 @@ int main(int argc, char *argv[])
                 //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
 
-                if(newpop(fd_pop, ipaddr, tport) == -1)
+
+                if(newpop(fd_pop, ipaddr, tport)  == -1) //retorna -1 em caso de insucesso e 0 em caso de sucesso
                 {
                     if(flag_d)
                     {
