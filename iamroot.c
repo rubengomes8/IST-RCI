@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
                     //////////////////////// 2. estabelecer sessão TCP com o ponto de acesso ////////////////////////////////
 
                     //pop_addr e pop_tport em vez das strings com os números
-                    fd_pop = tcp_socket_connect("127.0.0.1", "58000");
+                    fd_pop = tcp_socket_connect("127.0.0.1", "58001");
                     if(fd_pop == -1)
                     {
                         if(flag_d) printf("A aplicação irá terminar...\n");
@@ -327,6 +327,7 @@ int main(int argc, char *argv[])
                     }
 
                     strncpy(buffer, msg, 2);
+                    buffer[2] = '\0';
                     if(!strcmp(buffer, "WE")) //Recebeu uma mensagem  Welcome
                     {
                         sprintf(buffer, "WE %s\n", streamID);

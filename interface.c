@@ -12,6 +12,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
 
     int maxfd, counter;
     fd_set fd_read_set;
+    fd_set fd_read_write_set;
     int exit_flag = 0;
 
     int teste = 0;
@@ -40,6 +41,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
 
 
         FD_ZERO(&fd_read_set);
+        FD_ZERO(&fd_read_write_set);
 
         //Prepara os file descriptors do servidor de acesso e do stdin para leitura
         FD_SET(fd_udp, &fd_read_set);
@@ -48,10 +50,11 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         FD_SET(fd_tcp_server, &fd_read_set);
         maxfd = max(maxfd, fd_tcp_server);
         //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante
-        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
+        fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
+      //  fd_array_set(fd_array, &fd_write_set, %maxfd, tcp_sessions);
 
 
-        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)NULL);
+        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, &fd_read_write_set,  (struct timeval *)NULL);
         if(counter <= 0)
         {
             if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
@@ -62,26 +65,26 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         //Escreve para os pares TCP a jusante
         for(i = 0; i<tcp_sessions; i++)
         {
-            if(FD_ISSET(fd_array[i], &fd_read_set))
+            if(fd_array[i] != -1)
             {
-                if(nova_ligacao)
+                if(FD_ISSET(fd_array[i], &fd_read_write_set))
                 {
-                    if(tcp_sessions - tcp_occupied > 0)
+                    /*if(nova_ligacao)
                     {
-                        //Há sessões disponíveis
-                        //Enviar WELCOME
-                        sprintf(buffer, "WE %s\n", streamID);
-                        ptr = buffer;
-                        tcp_send(strlen(ptr), ptr, fd_array[i]);
-                    }
-                    else if(tcp_sessions == tcp_occupied)
-                    {
-                        //Não há sessões disponíveis
-                        //Enviar REDIRECT
-                    }
-                    nova_ligacao = 0;
-                }
+                        if(tcp_sessions - tcp_occupied > 0)
+                        {
+                            //Há sessões disponíveis
+                            //Enviar WELCOME
+                        }
+                        else if(tcp_sessions == tcp_occupied)
+                        {
+                            //Não há sessões disponíveis
+                            //Enviar REDIRECT
+                        }
+                        nova_ligacao = 0;
+                    }*/
 
+                }
             }
         }
 
@@ -89,17 +92,29 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         if(FD_ISSET(fd_tcp_server, &fd_read_set))
         {
             if(flag_d) printf("Novo pedido de conexão...\n");
-            if(new_connection(fd_tcp_server, fd_array, tcp_sessions) == -1)
+            i = new_connection(fd_tcp_server, fd_array, tcp_sessions);
+            if(i == -1)
             {
                 if(flag_d) printf("Novo pedido de ligação recusado...\n");
             }
             else
             {
-                nova_ligacao = 1;
-                tcp_occupied ++;
-                sprintf(buffer, "WE %s\n", streamID);
-                ptr = buffer;
-                tcp_send(strlen(ptr), ptr, fd_array[i]);
+                if(tcp_sessions - tcp_occupied > 0)
+                {
+                    if(flag_d)
+                    {
+                        printf("Pedido de ligação aceite...\n");
+                        printf("A comunicar com o peer...\n");
+                    }
+                    sprintf(buffer, "WE %s\n", streamID);
+                    ptr = buffer;
+                    tcp_send(strlen(ptr), ptr, fd_array[i]); //não poder ser 0
+                    if(flag_d)
+                    {
+                        printf("Mensagem enviada ao peer: %s\n", ptr);
+                    }
+                }
+
             }
         }
 

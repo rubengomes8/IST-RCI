@@ -85,9 +85,12 @@ int tcp_receive(int nbytes, char *ptr, int fd)
   int nleft, nread;
 
   nleft = nbytes;
+int flag = 0;
 
-  while (nleft > 0)
+
+  while (flag == 0 || *(ptr-1) != '\n')
   {
+      flag = 1;
     nread = read(fd, ptr, nleft);
     if(nread == -1)
     {
@@ -227,7 +230,7 @@ int new_connection(int fd, int *fd_array, int tcp_sessions)
         return -1;
     }
 
-    return 0;
+    return i;
 }
 
 void tcp_echo_communication(int *fd_array, char *buffer, int i)

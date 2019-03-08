@@ -334,7 +334,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
     timeout->tv_usec = TIMEOUT_USECS;
 
 
-    FD_ZERO(&fdSet);
+   /* FD_ZERO(&fdSet);
     FD_SET(fd_tcp, &fdSet);
     maxfd = fd_tcp;
 
@@ -346,7 +346,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
         free(timeout);
         free(msg);
         return NULL;
-    }
+    }*/
 
     ptr = msg;
     nread = tcp_receive(WELCOME_LEN, ptr, fd_tcp);
@@ -366,9 +366,10 @@ char *receive_confirmation(int fd_tcp, char *msg)
         return NULL;
     }
 
+    msg[nread] = '\0';
     if(flag_d)
     {
-        printf("Mensagem recebida do servidor de raízes: %s\n", msg);
+        printf("Mensagem recebida do peer: %s\n", msg);
     }
 
     free(timeout);
