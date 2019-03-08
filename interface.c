@@ -205,31 +205,38 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
     }
     else if(!strcasecmp(buffer, "display on\n"))
     {
+        if(flag_d) printf("Display on\n");
         flag_b = 1;
     }
     else if(!strcasecmp(buffer, "display off\n"))
     {
+        if(flag_d) printf("Display off\n");
         flag_b = 0;
     }
     else if (!strcasecmp(buffer, "format ascii\n"))
     {
+        if(flag_d) printf("Alteração para o formato ascii efetuada\n");
         ascii = 1;
     }
     else if(!strcasecmp(buffer, "format hex\n"))
     {
+        if(flag_d) printf("Alteração para o formato hexadecimal efetuada\n");
         ascii = 0;
     }
     else if(!strcasecmp(buffer, "debug on\n"))
     {
+        if(flag_d) printf("Debug on\n");
         flag_d = 1;
     }
     else if(!strcasecmp(buffer, "debug off\n"))
     {
+        if(flag_d) printf("Debug on\n");
         flag_d = 0;
     }
     else if(!strcasecmp(buffer, "tree\n"))
     {
         //Apresentar estrutura da transmissão
+        if(flag_d) printf("Estrutura de transmissão em árvore\n");
     }
     else if(!strcasecmp(buffer, "exit\n"))
     {
