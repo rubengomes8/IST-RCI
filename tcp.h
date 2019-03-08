@@ -24,7 +24,7 @@ int tcp_receive(int nbytes, char *ptr, int fd);
 int tcp_bind(char *service);
 int *fd_array_init(int tcp_sessions);
 void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd);
-void new_connection(int fd, int *fd_array);
+int new_connection(int fd, int *fd_array, int tcp_sessions);
 void tcp_echo_communication(int *fd_array, char *buffer, int fd_index);
 
 #endif //TCP_TCP_H

@@ -193,7 +193,7 @@ void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd)
     }
 }
 
-void new_connection(int fd, int *fd_array)
+int new_connection(int fd, int *fd_array, int tcp_sessions)
 {
     struct sockaddr_in addr;
     unsigned int addrlen;
@@ -207,10 +207,10 @@ void new_connection(int fd, int *fd_array)
     //Recebe um novo pedido de ligação
     if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
         if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
-        exit(1);
+        return -1;
     }
 
-    for(i=0; i<MAX_CONNECTIONS; i++)
+    for(i=0; i<tcp_sessions; i++)
     {
         if(fd_array[i] == -1)
         {
@@ -223,8 +223,8 @@ void new_connection(int fd, int *fd_array)
     //Se a ligação for recusada, envia uma mensagem ao cliente a informar
     if(state == refused)
     {
-        write(newfd, "Busy\n", 6);
         close(newfd);
+        return -1;
     }
 }
 

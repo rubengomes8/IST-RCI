@@ -92,7 +92,6 @@ int main(int argc, char *argv[])
 
     int is_root = 0;
     int welcome = 0;
-    int flag_control = 0;
 
 	char *msg = NULL;
 	char *token = NULL;
@@ -209,7 +208,7 @@ int main(int argc, char *argv[])
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
-                        fd_tcp_server);
+                        fd_tcp_server, fd_array);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -407,9 +406,8 @@ int main(int argc, char *argv[])
 
                 //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
-                flag_control = newpop(fd_pop, ipaddr, tport);  //retorna -1 em caso de insucesso e 0 em caso de sucesso
 
-                if(flag_control  == -1)
+                if(newpop(fd_pop, ipaddr, tport) == -1)
                 {
                     if(flag_d)
                     {
