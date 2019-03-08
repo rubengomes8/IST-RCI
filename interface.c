@@ -45,8 +45,10 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         FD_SET(fd_udp, &fd_read_set);
         FD_SET(0, &fd_read_set);
         maxfd = fd_udp;
+        FD_SET(fd_tcp_server, &fd_read_set);
+        maxfd = max(maxfd, fd_tcp_server);
         //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante
-        fd_array_set(fd_array, &fd_read_set, &maxfd);
+        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
 
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)NULL);
@@ -68,6 +70,9 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                     {
                         //Há sessões disponíveis
                         //Enviar WELCOME
+                        sprintf(buffer, "WE %s\n", streamID);
+                        ptr = buffer;
+                        tcp_send(strlen(ptr), ptr, fd_array[i]);
                     }
                     else if(tcp_sessions == tcp_occupied)
                     {
@@ -92,6 +97,9 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             {
                 nova_ligacao = 1;
                 tcp_occupied ++;
+                sprintf(buffer, "WE %s\n", streamID);
+                ptr = buffer;
+                tcp_send(strlen(ptr), ptr, fd_array[i]);
             }
         }
 

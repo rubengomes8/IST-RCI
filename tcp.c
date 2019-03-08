@@ -108,7 +108,7 @@ int tcp_receive(int nbytes, char *ptr, int fd)
  ///////////////////////////// Funções do servidor TCP /////////////////////////////////////////////////
 
 
-int tcp_bind(char *service)
+int tcp_bind(char *service, int tcp_sessions)
 {
     struct addrinfo hints, *res;
     int n;
@@ -144,7 +144,7 @@ int tcp_bind(char *service)
         return -1;
     }
 
-    n = listen(fd, MAX_CONNECTIONS_PENDING);
+    n = listen(fd, tcp_sessions);
     if(n == -1)
     {
         if(flag_d) fprintf(stderr, "Error: tcp_bind: listen: %s\n", strerror(errno));
@@ -178,12 +178,12 @@ int *fd_array_init(int tcp_sessions)
     return fd_array;
 }
 
-void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd)
+void fd_array_set(int *fd_array, fd_set *fdSet, int *maxfd, int tcp_sessions)
 {
     int i;
 
     //Faz set de todos os file descriptors diferentes de -1
-    for(i=0; i<MAX_CONNECTIONS; i++)
+    for(i=0; i<tcp_sessions; i++)
     {
         if(fd_array[i] != -1)
         {
@@ -226,6 +226,8 @@ int new_connection(int fd, int *fd_array, int tcp_sessions)
         close(newfd);
         return -1;
     }
+
+    return 0;
 }
 
 void tcp_echo_communication(int *fd_array, char *buffer, int i)

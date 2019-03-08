@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 
                     //Só funciona quando na interface.c respondermos
 
-                    msg = receive_confirmation(fd_ss, msg);
+                    msg = receive_confirmation(fd_pop, msg);
                     while(msg == NULL)
                     {
                         counter++;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
                         {
                             printf("A tentar comunicar com o peer...\n");
                         }
-                        msg = receive_confirmation(fd_ss, msg); 
+                        msg = receive_confirmation(fd_pop, msg);
                     }
 
                     counter = 0; //Reset do contador, caso tenha sido possível comunicar
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
                     printf("A instalar servidor TCP para transmissão a jusante...\n");
                 }
 
-                fd_tcp_server = tcp_bind(tport);
+                fd_tcp_server = tcp_bind(tport, tcp_sessions);
                 if(fd_tcp_server == -1)
                 {
                     if(flag_d) printf("A aplicação irá terminar...\n");

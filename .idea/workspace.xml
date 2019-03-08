@@ -10,7 +10,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1cbc23ac-d573-4c7e-8c02-2d8876fde908" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/iamroot" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iamroot.c" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iamroot.o" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.c" beforeDir="false" afterPath="$PROJECT_DIR$/interface.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interface.o" beforeDir="false" afterPath="$PROJECT_DIR$/interface.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tcp.c" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tcp.h" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tcp.o" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.o" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,11 +27,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/iamroot.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="59">
-              <caret line="397" lean-forward="true" selection-start-line="397" selection-end-line="397" />
+            <state relative-caret-position="401">
+              <caret line="319" column="55" selection-start-line="319" selection-start-column="55" selection-end-line="319" selection-end-column="55" />
             </state>
           </provider>
         </entry>
@@ -56,11 +63,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/interface.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="703">
-              <caret line="250" column="38" lean-forward="true" selection-start-line="250" selection-start-column="38" selection-end-line="250" selection-end-column="38" />
+            <state relative-caret-position="551">
+              <caret line="98" column="32" lean-forward="true" selection-start-line="98" selection-start-column="32" selection-end-line="98" selection-end-column="32" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -83,8 +90,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tcp.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="114">
-              <caret line="195" column="3" selection-start-line="195" selection-start-column="3" selection-end-line="195" selection-end-column="3" />
+            <state relative-caret-position="415">
+              <caret line="220" column="5" lean-forward="true" selection-start-line="220" selection-start-column="5" selection-end-line="220" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -110,8 +117,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tcp.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="494">
-              <caret line="26" column="18" selection-start-line="26" selection-start-column="4" selection-end-line="26" selection-end-column="18" />
+            <state relative-caret-position="437">
+              <caret line="23" column="44" selection-start-line="23" selection-start-column="44" selection-end-line="23" selection-end-column="44" />
             </state>
           </provider>
         </entry>
@@ -134,6 +141,8 @@
       <find>ipaddr</find>
       <find>res_udp</find>
       <find>flag_control</find>
+      <find>MAX_CONNECTIONS</find>
+      <find>fd_ss</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -150,11 +159,11 @@
         <option value="$PROJECT_DIR$/utils.h" />
         <option value="$PROJECT_DIR$/utils.c" />
         <option value="$PROJECT_DIR$/root_server.h" />
-        <option value="$PROJECT_DIR$/tcp.c" />
-        <option value="$PROJECT_DIR$/tcp.h" />
         <option value="$PROJECT_DIR$/interface.h" />
-        <option value="$PROJECT_DIR$/iamroot.c" />
+        <option value="$PROJECT_DIR$/tcp.h" />
+        <option value="$PROJECT_DIR$/tcp.c" />
         <option value="$PROJECT_DIR$/interface.c" />
+        <option value="$PROJECT_DIR$/iamroot.c" />
       </list>
     </option>
   </component>
@@ -215,12 +224,12 @@
       <updated>1551556838899</updated>
       <workItem from="1551556840257" duration="2819000" />
       <workItem from="1551643700542" duration="59333000" />
-      <workItem from="1551995450083" duration="10846000" />
+      <workItem from="1551995450083" duration="12682000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="72998000" />
+    <option name="totallyTimeSpent" value="74834000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
@@ -285,13 +294,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/udp.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1140">
-          <caret line="60" column="14" selection-start-line="60" selection-start-column="14" selection-end-line="60" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="76">
@@ -313,6 +315,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/root_server.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2171">
+          <caret line="300" column="5" selection-start-line="300" selection-start-column="5" selection-end-line="300" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/interface.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="266">
@@ -323,41 +332,41 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tcp.c">
+    <entry file="file://$PROJECT_DIR$/udp.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="114">
-          <caret line="195" column="3" selection-start-line="195" selection-start-column="3" selection-end-line="195" selection-end-column="3" />
+        <state relative-caret-position="1140">
+          <caret line="60" column="14" selection-start-line="60" selection-start-column="14" selection-end-line="60" selection-end-column="14" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tcp.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="494">
-          <caret line="26" column="18" selection-start-line="26" selection-start-column="4" selection-end-line="26" selection-end-column="18" />
+        <state relative-caret-position="437">
+          <caret line="23" column="44" selection-start-line="23" selection-start-column="44" selection-end-line="23" selection-end-column="44" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/root_server.c">
+    <entry file="file://$PROJECT_DIR$/tcp.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2171">
-          <caret line="300" column="5" selection-start-line="300" selection-start-column="5" selection-end-line="300" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/iamroot.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="59">
-          <caret line="397" lean-forward="true" selection-start-line="397" selection-end-line="397" />
+        <state relative-caret-position="415">
+          <caret line="220" column="5" lean-forward="true" selection-start-line="220" selection-start-column="5" selection-end-line="220" selection-end-column="5" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/interface.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="703">
-          <caret line="250" column="38" lean-forward="true" selection-start-line="250" selection-start-column="38" selection-end-line="250" selection-end-column="38" />
+        <state relative-caret-position="551">
+          <caret line="98" column="32" lean-forward="true" selection-start-line="98" selection-start-column="32" selection-end-line="98" selection-end-column="32" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/iamroot.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="401">
+          <caret line="319" column="55" selection-start-line="319" selection-start-column="55" selection-end-line="319" selection-end-column="55" />
         </state>
       </provider>
     </entry>
