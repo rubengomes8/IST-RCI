@@ -60,8 +60,14 @@ root_server.o:  root_server.c root_server.h udp.h
 # To create the object file interface.o, we need the source files
 # interface.c and interface.h:
 #
-interface.o:  interface.c interface.h utils.h
+interface.o:  interface.c interface.h utils.h queue.h
 	$(CC) $(CFLAGS) -c interface.c
+
+# To create the object file queue.o, we need the source files
+# queue.c and queue.h:
+#
+queue.o:  queue.c queue.h
+	$(CC) $(CFLAGS) -c queue.c
 
 # To start over from scratch, type 'make clean'.  This
 # removes the executable file, as well as old .o object
