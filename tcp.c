@@ -69,30 +69,30 @@ int tcp_send(int nbytes, char *ptr, int fd)
 
 int tcp_receive(int nbytes, char *ptr, int fd)
 {
-  int nleft, nread;
+    int nleft, nread;
 
-  nleft = nbytes;
-int flag = 0;
+    nleft = nbytes;
+    int flag = 0;
 
 
-  while (flag == 0 || *(ptr-1) != '\n')
-  {
-      flag = 1;
-    nread = read(fd, ptr, nleft);
-    if(nread == -1)
+    while (flag == 0 || *(ptr-1) != '\n')
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_receive: read: %s\n", strerror(errno));
-        return -1;
+        flag = 1;
+        nread = read(fd, ptr, nleft);
+        if(nread == -1)
+        {
+            if(flag_d) fprintf(stderr, "Error: tcp_receive: read: %s\n", strerror(errno));
+            return -1;
+        }
+        else if(nread == 0)
+        {
+            return 0; //conexão terminada pelo peer
+        }
+        nleft -= nread;
+        ptr += nread;
     }
-    else if(nread == 0)
-    {
-        return 0; //conexão terminada pelo peer
-    }
-    nleft -= nread;
-    ptr += nread;
-  }
-  nread = nbytes - nleft;
-  return nread;
+    nread = nbytes - nleft;
+    return nread;
 }
 
  ///////////////////////////// Funções do servidor TCP /////////////////////////////////////////////////

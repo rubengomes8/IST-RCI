@@ -33,6 +33,7 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
         char *streamIP, char *streamPORT);
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
 void stream_id_to_lowercase(char *streamID);
+char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport);
 void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addrinfo *res_rs, int fd_rs);
 int get_redirect(char *pop_addr, char *pop_tport, char *msg);
 void free_and_close(int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo *res_pop, struct addrinfo *res_ss, int *fd_array);

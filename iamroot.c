@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Conta tentativas de comunicação
-    int counter = 0;
+    //int counter = 0;
 
     char buffer[BUFFER_SIZE];
 
@@ -132,26 +132,7 @@ int main(int argc, char *argv[])
     if(has_stream)
     {
         ///////////////////////////////// Descobre se é raíz ou não /////////////////////////////////////////////////////
-        msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
-        //Enquanto receber NULL, significa que não houve resposta do servidor de raízes
-        while(msg == NULL)
-        {
-            counter++;
-            if(counter == MAX_TRIES)
-            {
-                if(flag_d)
-                {
-                    printf("\n");
-                    printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
-                    printf("A terminar o programa...\n");
-                }
-                if (res_rs != NULL) freeaddrinfo(res_rs);
-                if (fd_rs != -1) close(fd_rs);
-                exit(0);
-            }
-            msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
-        }
-        counter = 0; //Reset do contador, caso tenha sido possível comunicar
+        msg = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -260,4 +241,6 @@ int main(int argc, char *argv[])
     
 }
 
+// ./iamroot jsrg:127.0.0.1:59000 -i 127.0.0.1 -d 
 
+// ./iamroot jsrg:127.0.0.1:59000 -i 127.0.0.2 -d
