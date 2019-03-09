@@ -10,7 +10,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
 {
     int maxfd, counter;
     fd_set fd_read_set;
-    fd_set fd_read_write_set;
     int exit_flag = 0;
     int i;
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
@@ -20,7 +19,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     {
 
         FD_ZERO(&fd_read_set);
-        FD_ZERO(&fd_read_write_set);
 
         //Prepara os file descriptors do servidor de acesso e do stdin para leitura 
         FD_SET(fd_udp, &fd_read_set);
@@ -30,10 +28,10 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         FD_SET(fd_tcp_server, &fd_read_set);
         maxfd = max(maxfd, fd_tcp_server);
         //Prepara os file descriptors do array de file descriptors para comunicação TCP a jusante que podem servir para escrita e para leitura
-        fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
+        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
 
-        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, &fd_read_write_set,  (struct timeval *)NULL);
+        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL,  (struct timeval *)NULL);
         if(counter <= 0)
         {
             if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
@@ -46,7 +44,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         {
             if(fd_array[i] != -1)
             {
-                if(FD_ISSET(fd_array[i], &fd_read_write_set))
+                if(FD_ISSET(fd_array[i], &fd_read_set))
                 {
                     //Enviar e receber mensagens
                 }
@@ -88,7 +86,6 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
 {
     int maxfd, counter;
     fd_set fd_read_set;
-    fd_set fd_read_write_set;
     int exit_flag = 0;
     int i;
 
@@ -97,18 +94,17 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
     while(1)
     {
         FD_ZERO(&fd_read_set);
-        FD_ZERO(&fd_read_write_set);
         FD_SET(0, &fd_read_set);
         maxfd = 0;
         FD_SET(fd_tcp_server, &fd_read_set);
         maxfd = max(maxfd, fd_tcp_server);
-        fd_array_set(fd_array, &fd_read_write_set, &maxfd, tcp_sessions);
+        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
 
 
 
 
-        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, &fd_read_write_set, (struct timeval*)NULL);
+        counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL, (struct timeval*)NULL);
         if(counter <= 0)
         {
             if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
@@ -120,7 +116,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
         {
             if(fd_array[i] != -1)
             {
-                if(FD_ISSET(fd_array[i], &fd_read_write_set))
+                if(FD_ISSET(fd_array[i], &fd_read_set))
                 {
                     //Enviar e receber mensagens
                 }
