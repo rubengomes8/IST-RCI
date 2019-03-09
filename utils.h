@@ -49,6 +49,7 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
 int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo* res_pop);
 int wait_for_confirmation(char *pop_addr, char* pop_tport, int fd_rs, struct addrinfo *res_rs, int fd_udp, struct addrinfo *res_udp, int fd_pop, struct addrinfo *res_pop, char *streamID);
 void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addrinfo *res_rs, int fd_tcp_server, struct addrinfo* res_tcp, int fd_udp, struct addrinfo *res_udp, int *fd_array);
+int install_tcp_server_not_root(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, struct addrinfo *res_ss, char *ipaddr, int tcp_sessions, int fd_udp, struct addrinfo *res_udp);
 
 
 #endif //UTILS_UTILS_H

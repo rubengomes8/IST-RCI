@@ -557,6 +557,38 @@ int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_s
 	return fd_tcp_server;
 }
 
+int install_tcp_server_not_root(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, struct addrinfo *res_ss, char *ipaddr, int tcp_sessions, int fd_udp, struct addrinfo *res_udp)
+{
+	 int fd_tcp_server = -1;
+
+
+	 //Cria ponto de comunicação no porto tport
+	 if(flag_d)
+	 {
+		 printf("A instalar servidor TCP para transmissão a jusante, no endereço %s:%s...\n", ipaddr, tport);
+	 }
+
+	 fd_tcp_server = tcp_bind(tport, tcp_sessions);
+	 if(fd_tcp_server == -1)
+	 {
+		 if(flag_d) printf("A aplicação irá terminar...\n");
+		 if(fd_rs != -1) close(fd_rs);
+		 if(res_rs != NULL) freeaddrinfo(res_rs);
+		 if(fd_ss != -1) close(fd_ss);
+		 if(res_ss != NULL) freeaddrinfo(res_ss);
+		 if(fd_udp != -1) close(fd_udp);
+		 if(res_udp != NULL) freeaddrinfo(res_udp);
+		 exit(0);
+	 }
+
+	 if(flag_d)
+	 {
+		 printf("Servidor TCP para comunicação a jusante instalado com sucesso, no endereço %s:%s\n", ipaddr, tport);
+	 }
+
+	 return fd_tcp_server;
+}
+
 int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_ss)
 {
 	int *fd_array;

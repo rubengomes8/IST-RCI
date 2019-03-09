@@ -24,13 +24,13 @@ default: iamroot
 # To create the executable file iamroot we need the object files
 # iamroot.o, udp.o, tcp.o, utils.o and interface.o:
 #
-iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o
-	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o
+iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o
+	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o
 
 # To create the object file iamroot.o, we need the source
 # files iamroot.c, udp.h, tcp.h, utils.h and interface,h:
 #
-iamroot.o:  iamroot.c tcp.h udp.h utils.h interface.h
+iamroot.o:  iamroot.c tcp.h udp.h utils.h interface.h queue.h
 	$(CC) $(CFLAGS) -c iamroot.c
 
 # To create the object file udp.o, we need the source files
@@ -57,22 +57,22 @@ utils.o:  utils.c utils.h
 root_server.o:  root_server.c root_server.h udp.h
 	$(CC) $(CFLAGS) -c root_server.c
 
-# To create the object file interface.o, we need the source files
-# interface.c and interface.h:
-#
-interface.o:  interface.c interface.h utils.h queue.h
-	$(CC) $(CFLAGS) -c interface.c
-
 # To create the object file queue.o, we need the source files
 # queue.c and queue.h:
 #
 queue.o:  queue.c queue.h
 	$(CC) $(CFLAGS) -c queue.c
 
+# To create the object file interface.o, we need the source files
+# interface.c and interface.h:
+#
+interface.o:  interface.c interface.h utils.h queue.h
+	$(CC) $(CFLAGS) -c interface.c
+
 # To start over from scratch, type 'make clean'.  This
 # removes the executable file, as well as old .o object
 # files and *~ backup files:
 #
 clean:
-	$(RM) count *.o *~
+	$(RM) iamroot *.o *~
 

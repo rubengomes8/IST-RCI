@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 
 
                 ////////////////// 4. Instala servidor TCP para o ponto de acesso a jusante ////////////////////////////
-                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, res_ss, ipaddr, tcp_sessions);
+                fd_tcp_server = install_tcp_server_not_root(tport, fd_rs, res_rs, fd_ss, res_ss, ipaddr, tcp_sessions, fd_udp, res_udp);
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
                 fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs, res_ss);
