@@ -383,3 +383,52 @@ int newpop(int fd_pop, char *ipaddr, char *tport)
     return 0;
 
 }
+
+int pop_query(int query_id, int bestpops, int fd)
+{
+    int n;
+    char *buffer = NULL;
+
+    //comprimento do buffer é o comprimento de POP_QUERY sem indicar bestpops e
+    //o nº de casas decimais de bestpops
+    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops%10));
+    if(buffer == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: pop_query_malloc: %s\n", strerror(errno));
+        return -1;
+    }
+
+    //Imprimir query_id em hexadecimal
+    sprintf(buffer, "PQ %X %d\n", query_id, bestpops);
+
+    n = tcp_send(strlen(buffer), buffer, fd);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro duranto o envio da mensagem POP_QUERY\n");
+        free(buffer);
+        return -1;
+    }
+    else if(n == 0)
+    {
+        if(flag_d) printf("Falha ao enviar a mensagem POP_QUERY: conexão terminada pelo peer\n");
+        free(buffer);
+        return 0;
+    }
+
+    free(buffer);
+    return 1;
+}
+
+void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
+{
+    char *token = NULL;
+
+    token = strtok(ptr, " ");
+    token = strtok(NULL, " ");
+
+    *queryID = atoi(token);
+
+    token = strtok(NULL, "\n");
+
+    *requested_pops = atoi(token);
+}

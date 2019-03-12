@@ -15,6 +15,8 @@
 #define WELCOME_LEN 68 //comprimento máximo da mensagem WELCOME
 #define REDIRECT_LEN 25 //comprimento máximo da mensagem REDIRECT
 #define NEWPOP_LEN 	25//comprimento máximo da mensagem NEWPOP 2+1+15+1+5+1
+#define POP_QUERY_MIN_LEN 9//comprimento mínimo da mensagem POPQUERY SEM indicar bestpops
+
 
 #define TIMEOUT_SECS 10
 #define TIMEOUT_USECS 0
@@ -32,5 +34,7 @@ void popresp(int fd_udp, char* streamID, char *ipaddr, char *tport);
 void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID);
 char *receive_confirmation(int fd_tcp, char *msg);
 int newpop(int fd_pop, char *ipaddr, char *tport);
+int pop_query(int query_id, int bestpops, int fd);
+void receive_pop_query(char *ptr, int *requested_pops, int *queryID);
 
 #endif //RCI_ROOT_SERVER_H

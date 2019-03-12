@@ -121,7 +121,7 @@ void decreaseAvailableSessions(queue *element)
 }
 
 //Remove um elemento, retorna a nova head e altera a tail, se necessário. Se retornar NULL deixou de existir fila
-queue *removeElement(queue *head, queue **tail, char *ip, char *port)
+queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port)
 {
     queue *aux = head;
     queue *aux2;

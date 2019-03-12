@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
-                        fd_tcp_server, fd_array);
+                        fd_tcp_server, fd_array, bestpops);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
-                        fd_tcp_server, fd_array);
+                        fd_tcp_server, fd_array, bestpops, fd_pop);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }
