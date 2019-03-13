@@ -391,7 +391,7 @@ int pop_query(int query_id, int bestpops, int fd)
 
     //comprimento do buffer é o comprimento de POP_QUERY sem indicar bestpops e
     //o nº de casas decimais de bestpops
-    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops%10));
+    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops%10 + 1));
     if(buffer == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: pop_query_malloc: %s\n", strerror(errno));
@@ -399,7 +399,7 @@ int pop_query(int query_id, int bestpops, int fd)
     }
 
     //Imprimir query_id em hexadecimal
-    sprintf(buffer, "PQ %X %d\n", query_id, bestpops);
+    sprintf(buffer, "PQ %04X %d\n", query_id, bestpops);
 
     n = tcp_send(strlen(buffer), buffer, fd);
     if(n == -1)
@@ -431,4 +431,55 @@ void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
     token = strtok(NULL, "\n");
 
     *requested_pops = atoi(token);
+}
+
+void receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
+{
+    char *token = NULL;
+
+    token = strtok(ptr, " ");
+    token = strtok(NULL, " ");
+
+    token = strtok(NULL, ":");
+    strcpy(ip, token);
+
+    token = strtok(NULL, " ");
+    strcpy(port, token);
+
+    token = strtok(NULL, "\n");
+    *available_sessions = atoi(token);
+}
+
+int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
+{
+    char *msg = NULL;
+    int n;
+
+    msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + avails%10 + 1));
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_pop_reply: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    sprintf(msg, "PR %04X %s:%s %d\n", query_id, ip, port, avails);
+
+
+    n = tcp_send(strlen(msg), msg, fd);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro duranto o envio da mensagem POP_REPLY\n");
+        free(msg);
+        return -1;
+    }
+    else if(n == 0)
+    {
+        if(flag_d) printf("Falha ao enviar a mensagem REPLY: conexão terminada pelo peer\n");
+        free(msg);
+        return 0;
+    }
+
+    free(msg);
+    return 1;
+
 }

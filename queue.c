@@ -139,7 +139,7 @@ queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port)
             //Esse elemento é libertado e retona-se NULL
             if(aux == head && aux == *tail)
             {
-                free(aux);
+                freeElement(aux);
                 return NULL;
             }
 
@@ -156,7 +156,7 @@ queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port)
             if(aux == *tail)
             {
                 *tail = aux2;
-                free(aux);
+                freeElement(aux);
                 return head;
             }
 
@@ -187,7 +187,7 @@ queue *removeElementByIndex(queue *head, queue **tail, int index)
             //Esse elemento é libertado e retona-se NULL
             if(aux == head && aux == *tail)
             {
-                free(aux);
+                freeElement(aux);
                 return NULL;
             }
 
@@ -204,7 +204,7 @@ queue *removeElementByIndex(queue *head, queue **tail, int index)
             if(aux == *tail)
             {
                 *tail = aux2;
-                free(aux);
+                freeElement(aux);
                 return head;
             }
 
