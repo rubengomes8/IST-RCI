@@ -89,7 +89,8 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                     {
                         if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
                     }
-                    else {
+                    else
+                    {
                         //Coloca um \0 no fim da mensagem recebida
                         //Se n fosse igual a MAX_BYTES estariamos a apagar o ultimo carater recebido
                         if (n < MAX_BYTES) {
@@ -106,6 +107,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                             pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, ptr, &empty_pops_queue);
                             waiting_pop_reply = 0;
+                            //VERIFICAR QUERY ID
                         }
                         //TREE_REPLY
                         else if(!strcmp("TR", buffer))
@@ -145,7 +147,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
         }
 
         //Servidor de acessos - fizeram um pedido POPREQ
-        if(FD_ISSET(fd_udp, &fd_read_set) && waiting_pop_reply == 0)
+        if(FD_ISSET(fd_udp, &fd_read_set))
         {
             if(tcp_sessions > tcp_occupied)
             {
@@ -155,50 +157,64 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
             }
             else
             {
-                if(empty_pops_queue)
+                if(waiting_pop_reply == 0)
                 {
-                    //Se a lista de pops estiver vazia, faz pop_query
-                    redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                            &redirect_queue_tail);
-                    waiting_pop_reply = 1;
-
-                    if(redirect_queue_head == NULL)
+                    if(empty_pops_queue)
                     {
-                        //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                        empty_redirect_queue = 1;
-                        tcp_occupied = 0;
-                    }
-                }
-                else
-                {
-                    //Caso ainda haja elementos na lista de pops, indicar o endereço do primeiro
-                    popresp(fd_udp, streamID, getIP(pops_queue_head), getPORT(pops_queue_head));
-                    decreaseAvailableSessions(pops_queue_head);
-                    if(getAvailableSessions(pops_queue_head) == 0)
-                    {
-                        //Se o pop que foi indicado deixar de ter ligações, removê-lo da lista
-                        pops_queue_head = removeElementByAddress(pops_queue_head, &pops_queue_tail, getIP(pops_queue_head),
-                                getPORT(pops_queue_head));
+                        //Se a lista de pops estiver vazia, faz pop_query
+                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                              &redirect_queue_tail);
+                        waiting_pop_reply = 1;
 
-                        if(pops_queue_head == NULL)
+                        if(redirect_queue_head == NULL)
                         {
-                            //Se a lista de pops ficar vazia, fazer pop_query
-                            empty_pops_queue = 1;
-
-                            //Se a lista de pops estiver vazia, faz pop_query
-                            redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                                  &redirect_queue_tail);
-                            waiting_pop_reply = 1;
-
-                            if(redirect_queue_head == NULL)
+                            //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                            empty_redirect_queue = 1;
+                            tcp_occupied = 0;
+                            for(i = 0; i<tcp_sessions; i++)
                             {
-                                //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                                empty_redirect_queue = 1;
-                                tcp_occupied = 0;
+                                close(fd_array[i]);
+                                fd_array[i] = -1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //Caso ainda haja elementos na lista de pops, indicar o endereço do primeiro
+                        popresp(fd_udp, streamID, getIP(pops_queue_head), getPORT(pops_queue_head));
+                        decreaseAvailableSessions(pops_queue_head);
+                        if(getAvailableSessions(pops_queue_head) == 0)
+                        {
+                            //Se o pop que foi indicado deixar de ter ligações, removê-lo da lista
+                            pops_queue_head = removeElementByAddress(pops_queue_head, &pops_queue_tail, getIP(pops_queue_head),
+                                                                     getPORT(pops_queue_head));
+
+                            if(pops_queue_head == NULL)
+                            {
+                                //Se a lista de pops ficar vazia, fazer pop_query
+                                empty_pops_queue = 1;
+
+                                //Se a lista de pops estiver vazia, faz pop_query
+                                redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                                      &redirect_queue_tail);
+                                waiting_pop_reply = 1;
+
+                                if(redirect_queue_head == NULL)
+                                {
+                                    //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                                    empty_redirect_queue = 1;
+                                    tcp_occupied = 0;
+                                    for(i = 0; i<tcp_sessions; i++)
+                                    {
+                                        close(fd_array[i]);
+                                        fd_array[i] = -1;
+                                    }
+                                }
                             }
                         }
                     }
                 }
+
             }
         }
 
@@ -286,7 +302,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                     {
                         if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
                     }
-                    else {
+                    else
+                    {
                         //Coloca um \0 no fim da mensagem recebida
                         //Se n fosse igual a MAX_BYTES estariamos a apagar o ultimo carater recebido
                         if (n < MAX_BYTES) {
@@ -300,9 +317,15 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                         //POP_REPLY
                         if(!strcmp("PR", buffer))
                         {
+                            if(waiting_pop_reply == 1)
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                             pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, ptr, &empty_pops_queue);
-                            waiting_pop_reply = 0;
+
+
+                            //Ver se os queryid dão match
+                            //Ver se recebeu todos os requested_pops
+                            //Enviar os que recebeu
+                            //Ter flag a dizer se ainda falta receber ou se já chegaram todos os pedidos waiting_pop_reply = 0;
 
 
                             //Responder para cima
@@ -373,7 +396,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                     //Se não tiver suficientes fazer pop_query ele próprio
                     receive_pop_query(ptr, &requested_pops, &query_id);
 
-                    if(tcp_sessions - tcp_occupied >= bestpops)
+                    if(tcp_sessions - tcp_occupied >= requested_pops)
                     {
                         n = send_pop_reply(query_id, tcp_sessions - tcp_occupied, ipaddr, tport, fd_pop);
                         if(n == 0)
@@ -415,6 +438,11 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                                 //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
                                 empty_redirect_queue = 1;
                                 tcp_occupied = 0;
+                                for(i = 0; i<tcp_sessions; i++)
+                                {
+                                    close(fd_array[i]);
+                                    fd_array[i] = -1;
+                                }
                             }
                         }
                     }
