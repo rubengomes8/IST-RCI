@@ -422,23 +422,30 @@ int pop_query(int query_id, int bestpops, int fd)
 void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
 {
     char *token = NULL;
+    int query_aux;
 
     token = strtok(ptr, " ");
     token = strtok(NULL, " ");
 
     *queryID = atoi(token);
+  
 
     token = strtok(NULL, "\n");
 
     *requested_pops = atoi(token);
 }
 
-void receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
+int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
 {
+    int query_id;
     char *token = NULL;
 
-    token = strtok(ptr, " ");
-    token = strtok(NULL, " ");
+    token = strtok(ptr, " "); //PR
+
+    token = strtok(NULL, " ");//query ID
+    query_id = atoi(token);
+
+    printf("Função receive_pop_reply: query_id %d\n", query_id);
 
     token = strtok(NULL, ":");
     strcpy(ip, token);
@@ -448,6 +455,8 @@ void receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
 
     token = strtok(NULL, "\n");
     *available_sessions = atoi(token);
+
+    return query_id;
 }
 
 int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)

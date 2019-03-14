@@ -36,7 +36,7 @@ char *receive_confirmation(int fd_tcp, char *msg);
 int newpop(int fd_pop, char *ipaddr, char *tport);
 int pop_query(int query_id, int bestpops, int fd);
 void receive_pop_query(char *ptr, int *requested_pops, int *queryID);
-void receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions);
+int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions);
 int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd);
 
 #endif //RCI_ROOT_SERVER_H
