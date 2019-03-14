@@ -422,7 +422,6 @@ int pop_query(int query_id, int bestpops, int fd)
 void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
 {
     char *token = NULL;
-    int query_aux;
 
     token = strtok(ptr, " ");
     token = strtok(NULL, " ");
@@ -492,3 +491,88 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     return 1;
 
 }
+
+int send_tree_query(char *ip, char *tport, int fd)
+{
+    char *msg = NULL;
+    int n;
+
+    msg = (char *)malloc(sizeof(char)*TQ_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    sprintf(msg, "TQ %s:%s\n", ip, tport);
+
+    n = tcp_send(strlen(msg), msg, fd);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro duranto o envio da mensagem TREE_QUERY\n");
+        free(msg);
+        return -1;
+    }
+    else if(n == 0)
+    {
+        if(flag_d) printf("Falha ao enviar a mensagem TREE_QUERY: conexão terminada pelo peer\n");
+        free(msg);
+        return 0;
+    }
+
+    free(msg);
+    return 1;
+}
+
+void receive_tree_query(char *ptr, char *ip, char *tport){
+
+    char *token = NULL;
+
+    token = strtok(ptr, " "); //TQ
+
+    token = strtok(NULL, ":");//ipaddr
+    strcpy(ip, token);
+
+    token = strtok(NULL, "\n");
+    strcpy(tport, token);
+
+}
+
+
+
+int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd)
+{
+    char *msg = NULL;
+    int n;
+    char tcp_sessions_str[4];
+    int size_tcp_sessions;
+    sprintf(tcp_sessions_str, "%d", tcp_sessions);
+    size_tcp_sessions = strlen(tcp_sessions_str);
+
+
+    msg = (char *)malloc(sizeof(char)*(TR_MIN_LEN + size_tcp_sessions + tcp_occupied*TR_LEN_BY_OCCUPIED));
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    sprintf(msg, "TR %s:%s %d\n", ip, tport, tcp_sessions);
+
+    //Percorrer a lista de redirects tantas vezes quanto o número tcp_occupied e para cada uma delas acrescentar à TREE REPLY a seguinte string:
+    //"<addr>:<port>\n"
+
+
+    //No final acrescentar um \n à string resultante
+
+    //Enviar a string
+
+    return 0;
+}
+
+void receive_tree_reply(char *ptr, char *ip, char *tport, int tcp_sessions)
+{
+
+}
+
+

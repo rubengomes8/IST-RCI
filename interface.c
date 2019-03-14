@@ -267,6 +267,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
     char popreply_port[PORT_LEN +1];
     int popreply_avails;
 
+    //Variáveis que vieram do tree query
+    char treequery_ip[IP_LEN +1];
+    char treequery_port[PORT_LEN +1];
+    int validate_treequery = -1;
+
+
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -516,6 +522,26 @@ w
                             }
                         }
                     }                    
+                }
+                else if(!strcmp("TQ", buffer))               
+                {                   
+                    if(flag_d) printf("Mensagem recebida do par a montante: %s\n", ptr);
+                    receive_tree_query(ptr, treequery_ip, treequery_port);
+                    validate_treequery = compare_ip_and_port(treequery_ip, treequery_port, ipaddr, tport);
+
+                    if(validate_treequery == 0) //O ip e o porto foram bem especificados
+                    {
+                        //Responder com um TREE_REPLY com capacidade e ocupação do ponto de acesso
+                        //Dúvida - ainda não percebi muito bem  de quem é o porto e o ip que vai na mensagem tree reply !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        //send_tree_reply();
+                       
+
+
+                    }
+                    else //Caso contrário deverá replicar a mensagem a jusante a menos que não tenha pares a jusante
+                    {
+                        //Percorrer a lista redirect e enviar para cada um deles a mesma mensagem -> send_tree_query
+                    }
                 }
             }
             ptr = NULL;

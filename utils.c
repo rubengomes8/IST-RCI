@@ -833,6 +833,18 @@ void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addri
 	}
 }
 
+//Compara 2 ip's e 2 portos, se os dois portos e os dois ip's coinciderem returna 0, caso contário retorna -1
+//vai ser usada para comparar se o ip e o port que recebeu no tree query correspondem ao seu
+
+int compare_ip_and_port(char *ip_rcvd, char *port_rcvd, char *ipaddr, char *tport)
+{
+    if(!strcmp(ip_rcvd, ipaddr) && !strcmp(port_rcvd, tport))
+        return 0;
+    else
+        return -1;
+}
+
+
 
 
 
