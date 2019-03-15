@@ -444,8 +444,6 @@ int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
     token = strtok(NULL, " ");//query ID
     query_id = atoi(token);
 
-    printf("Função receive_pop_reply: query_id %d\n", query_id);
-
     token = strtok(NULL, ":");
     strcpy(ip, token);
 
@@ -543,7 +541,6 @@ void receive_tree_query(char *ptr, char *ip, char *tport){
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd)
 {
     char *msg = NULL;
-    int n;
     char tcp_sessions_str[4];
     int size_tcp_sessions;
     sprintf(tcp_sessions_str, "%d", tcp_sessions);

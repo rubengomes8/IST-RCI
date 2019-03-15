@@ -21,7 +21,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     int i;
     int n;
     int query_id = 0;
-    int query_id_rcvd; //Acho q nao interessa na root
 
     //Variáveis para lista de apps iamroot ligadas imadiatamente a jusante
     //Vão formar uma lista utilizada para redirects
@@ -34,7 +33,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     //Queue de pops. A raiz nunca faz parte da lista
     struct _queue *pops_queue_head = NULL;
     struct _queue *pops_queue_tail = NULL;
-    struct _queue *pops_aux = NULL;
     int empty_pops_queue = 1;
 
 
@@ -43,6 +41,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
     char buffer[MAX_BYTES]; buffer[0] = '\0';
 
     int waiting_pop_reply = 0;
+    int received_pops = 0;
 
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
@@ -106,8 +105,15 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                         if(!strcmp("PR", buffer))
                         {
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
-                            pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, ptr, &empty_pops_queue, query_id, &query_id_rcvd);
-                            waiting_pop_reply = 0;
+                            pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, ptr, &empty_pops_queue, query_id, &received_pops, waiting_pop_reply);
+                            if(received_pops >= bestpops)
+                            {
+                                waiting_pop_reply = 0;
+                                received_pops = 0;
+                            }
+
+
+
                             //VERIFICAR QUERY ID
                         }
                         //recebeu um TREE_REPLY
@@ -155,6 +161,28 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                 //Se tiver sessões disponíveis diz para se ligarem a ele próprio
                 popresp(fd_udp, streamID, ipaddr, tport);
                 //Não se atualiza aqui o nº de sessões ocupadas. Apenas quando se envia welcome
+
+                if(tcp_occupied > 0 && tcp_sessions == tcp_occupied + 1 && empty_pops_queue && waiting_pop_reply == 0)
+                {
+                    //faz pop_query
+                    query_id++; //prinft("query_id: %d", query_id);
+                    redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                          &redirect_queue_tail);
+                    //está à espera da resposta do pop_query
+                    waiting_pop_reply = 1;
+
+                    if(redirect_queue_head == NULL)
+                    {
+                        //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                        empty_redirect_queue = 1;
+                        tcp_occupied = 0;
+                        for(i = 0; i<tcp_sessions; i++)
+                        {
+                            close(fd_array[i]);
+                            fd_array[i] = -1;
+                        }
+                    }
+                }
             }
             else
             {
@@ -170,6 +198,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                                                               &redirect_queue_tail);
                         //está à espera da resposta do pop_query
                         waiting_pop_reply = 1;
+                        received_pops = 0;
 
                         if(redirect_queue_head == NULL)
                         {
@@ -204,6 +233,7 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                                 redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
                                                                       &redirect_queue_tail);
                                 waiting_pop_reply = 1;
+                                received_pops = 0;
 
                                 if(redirect_queue_head == NULL)
                                 {
@@ -266,6 +296,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
     char popreply_ip[IP_LEN +1];
     char popreply_port[PORT_LEN +1];
     int popreply_avails;
+    int query_id_rcvd_aux = 0;
 
     //Variáveis que vieram do tree query
     char treequery_ip[IP_LEN +1];
@@ -334,12 +365,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                         //POP_REPLY
                         if(!strcmp("PR", buffer))
                         {
-                            
+                            query_id_rcvd_aux = receive_pop_reply(ptr, popreply_ip, popreply_port, &popreply_avails);
                             if(requested_pops - sent_pops > 0) //Se tiver pops por enviar
                             {
                                 if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                                 //Dúvida - Não sei se falta fazer um malloc ao ptr!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                query_id_rcvd = receive_pop_reply(ptr, popreply_ip, popreply_port, &popreply_avails);
+                                query_id_rcvd = query_id_rcvd_aux;
                                 //Receber os dados do pop reply vindos de jusante
 
                                 if(query_id == query_id_rcvd) //Verifica o queryID recebido na reply é o mesmo que o da última query
@@ -369,6 +400,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int 
                                 {
                                     //Se o query_id fôr diferente ignora e não envia nada para cima pq não é o mais atual logo significa que a root já tinha feito outro pedido
                                 }
+                            }
+                            else
+                            {
+                                if(flag_d) printf("Pop reply descartada, pois já tinham sido recebidos todos os pops pedidos!\n");
                             }
                             
 
@@ -852,7 +887,7 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
             }
             else if(n == 1)
             {
-                if(flag_d) printf("POP_QUERY enviado ao par com índice %d\n", i);
+                if(flag_d) printf("Pop query enviado ao par com índice %d\n", i);
             }
         }
         else if(fd_array[i] == -1)
@@ -865,33 +900,41 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
     return redirect_queue_head;
 }
 
-queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id, int *query_id_rcvd)
+queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
+        int *received_pops, int waiting_pop_reply)
 {
     char ip[IP_LEN + 1];
     char port[PORT_LEN + 1];
     int available_sessions;
+    int query_id_rcvd;
 
-    *query_id_rcvd = receive_pop_reply(ptr, ip, port, &available_sessions);
+    query_id_rcvd = receive_pop_reply(ptr, ip, port, &available_sessions);
 
-    printf("query_id %d", query_id);
-    printf("pop ip %s\n", ip);
-    printf("pop port %s\n", port);
-    printf("avails %d\n", available_sessions);
+    if(waiting_pop_reply)
+    {
+        *received_pops += available_sessions;
 
-    //Se o query id recebido na mensagem do POP REPLY fôr igual ao queryid atual
-    if(*query_id_rcvd == query_id){
-
-        if(*empty_pops_queue)
+        //Se o query id recebido na mensagem do POP REPLY fôr igual ao queryid atual
+        if(query_id_rcvd == query_id)
         {
-            pops_queue_head = newElement(ip, port, available_sessions, -1);
-            *pops_queue_tail = pops_queue_head;
-            *empty_pops_queue = 0;
-        }
-        else
-        {
-            *pops_queue_tail = insertTail(ip, port, available_sessions, -1, *pops_queue_tail);
+
+            if(*empty_pops_queue)
+            {
+                pops_queue_head = newElement(ip, port, available_sessions, -1);
+                *pops_queue_tail = pops_queue_head;
+                *empty_pops_queue = 0;
+            }
+            else
+            {
+                *pops_queue_tail = insertTail(ip, port, available_sessions, -1, *pops_queue_tail);
+            }
         }
     }
+    else
+    {
+        if(flag_d) printf("Pop reply descartada, pois já foram recebidas todas as pedidas!\n");
+    }
+
 
     return pops_queue_head;   
 }
