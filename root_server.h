@@ -74,6 +74,6 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd);
 int send_tree_query(char *ip, char *tport, int fd);
 void receive_tree_query(char *ptr, char *ip, char *tport);
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd);
-void receive_tree_reply(char *ptr, char *ip, char *tport, int tcp_sessions);
+void receive_tree_reply(char *ptr, int fd);
 
 #endif //RCI_ROOT_SERVER_H

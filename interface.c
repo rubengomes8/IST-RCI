@@ -5,7 +5,7 @@ extern int flag_d;
 extern int flag_b;
 extern int ascii;
 
-#define MAX_BYTES 256
+#define MAX_BYTES 10000
 
 //Fazer verificação se a queue não está vazia antes de tentar aceder
 //Ver no programa os sítios que fazem exit() e mudar/certificar que a saída do programa é suave, ou seja,
@@ -436,6 +436,9 @@ w
                         {
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                             //Receber TR
+                            //receive_tree_reply(ptr, fd);
+
+
                         }
                     }
                     ptr = NULL;
@@ -563,18 +566,22 @@ w
                     receive_tree_query(ptr, treequery_ip, treequery_port);
                     validate_treequery = compare_ip_and_port(treequery_ip, treequery_port, ipaddr, tport);
 
-                    if(validate_treequery == 0) //O ip e o porto foram bem especificados
+                    if(validate_treequery == 0) //O ip e o porto de destino forem o desta iamroot
                     {
                         //Responder com um TREE_REPLY com capacidade e ocupação do ponto de acesso
-                        //Dúvida - ainda não percebi muito bem  de quem é o porto e o ip que vai na mensagem tree reply !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        //send_tree_reply();
-                       
-
+                        send_tree_reply(treequery_ip, treequery_port, tcp_sessions, tcp_occupied, redirect_queue_head,redirect_queue_tail, fd_pop);
 
                     }
                     else //Caso contrário deverá replicar a mensagem a jusante a menos que não tenha pares a jusante
                     {
                         //Percorrer a lista redirect e enviar para cada um deles a mesma mensagem -> send_tree_query
+                        redirect_aux = redirect_queue_head;
+                        while(redirect_aux != NULL)
+                        {
+                            send_tree_query(getIP(redirect_aux), getPORT(redirect_aux), fd_tcp_server);
+                            
+                            redirect_aux = getNext(redirect_aux);
+                        }
                     }
                 }
             }
