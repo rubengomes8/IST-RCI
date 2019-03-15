@@ -514,7 +514,6 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
 
     free(msg);
     return 1;
-
 }
 
 
