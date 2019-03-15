@@ -3,6 +3,7 @@
 extern int flag_d;
 extern int flag_b;
 
+//////////////////////////////////// Comunicação com o servidor de raízes //////////////////////////////////////////////
 //Retorna -1 quando sai por timeout
 int dump(int fd_rs, struct addrinfo *res_rs)
 {
@@ -35,11 +36,10 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     if(flag_d)
     {
         printf("A comunicar com o servidor de raízes...\n");
-        printf("Mensagem enviada: %s\n", msg);
+        printf("Mensagem enviada ao servidor de raízes: %s\n", msg);
     }
 
     udp_send(fd_rs, msg, msg_len, 0, res_rs);
-
 
     //Espera pela resposta durante a duração de timeout
     FD_ZERO(&fdSet);
@@ -54,12 +54,10 @@ int dump(int fd_rs, struct addrinfo *res_rs)
         return -1;
     }
 
-
-
     n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
     n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
 
-    printf("Received by Root Server: %s\n", msg2);
+    if(flag_d) printf("Mensagem recebida do servidor de raízes: %s\n", msg2);
 
     free(timeout);
     return 0;
@@ -83,7 +81,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     timeout = (struct timeval *)malloc(sizeof(struct timeval));
     if(timeout == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: who_is_root: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: who_is_root: malloc: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -95,7 +93,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     msg = (char*) malloc(sizeof(char)*WIR_LEN);
     if(msg == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: who_is_root: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: who_is_root: malloc: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -105,13 +103,13 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     if(flag_d) printf("A comunicar com o servidor de raízes...\n");
     udp_send(fd_rs, msg, msg_len, 0, res_rs);
-    if(flag_d) printf("Mensagem enviada: %s\n", msg);
+    if(flag_d) printf("Mensagem enviada ao servidor de raízes: %s\n", msg);
     free(msg);
 
     msg2 = (char*) malloc(sizeof(char)*RIS_LEN);
     if(msg2 == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: who_is_root: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: who_is_root: malloc: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -136,7 +134,7 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
     n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
     if(n == -1)
     {
-        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem UDP...\n");
+        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem UDP do servidor de raízes!\n");
         free(timeout);
         return NULL;
     }
@@ -182,7 +180,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
     timeout = (struct timeval *)malloc(sizeof(struct timeval));
     if(timeout == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n", strerror(errno));
         return -1;
     }
 
@@ -195,14 +193,14 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
 
     if(flag_d)
     {
-        printf("A comunicar com o servidor de acesso...\n");
+        printf("A comunicar com o servidor de acessos...\n");
     }
 
     udp_send(fd_udp, msg, msg_len, 0, res_udp);
 
     if(flag_d)
     {
-        printf("Mensagem enviada: %s\n", msg);
+        printf("Mensagem enviada ao servidor de acessos: %s\n", msg);
     }
 
 
@@ -214,7 +212,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
 
     if(counter <= 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de acesso\n");
+        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de acessos...\n");
         free(timeout);
         return -1;
     }
@@ -224,7 +222,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
 
     if(flag_d)
     {
-        printf("Mensagem recebida do servidor de acesso: %s\n", msg_rcv);
+        printf("Mensagem recebida do servidor de acessos: %s\n", msg_rcv);
     }
 
     //Extraccção de pop_addr e pop_tport da mensagem recebida msg_rcv
@@ -233,7 +231,10 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
     token = strtok(NULL, ":");
     if(token == NULL)
     {
-        if(flag_d) printf("ipaddr inválido!\n");
+        if(flag_d)
+        {
+            printf("Falha em obter o IP do ponto de acesso...\n");
+        }
         free(timeout);
         return -1;
     }
@@ -242,7 +243,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
     token = strtok(NULL, "\n");
     if(token == NULL)
     {
-        if(flag_d) printf("tport inválido!\n");
+        if(flag_d) printf("Falha em obter o porto TCP do ponto de acesso...\n");
         free(timeout);
         return -1;
     }
@@ -296,6 +297,8 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 }
 
 //////////////////////////////////// Comunicação entre pares ///////////////////////////////////////////////////////////
+
+/////////////////////////////////////// Adesão à árvore ////////////////////////////////////////////////////////////////
 //Retorna NULL se não receber resposta
 char *receive_confirmation(int fd_tcp, char *msg)
 {
@@ -307,7 +310,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
     char *ptr = NULL;
     msg = NULL;
 
-    msg = (char*)malloc(sizeof(char)*WELCOME_LEN);
+    msg = (char*)malloc(sizeof(char)*WELCOME_LEN + 1);
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: receive_confirmation: malloc: %s\n", strerror(errno));
@@ -334,7 +337,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
 
     if(counter <= 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma mensagem do peer...\n");
+        if(flag_d) printf("Timed out: não foi recebida nenhuma mensagem do par...\n");
         free(timeout);
         free(msg);
         return NULL;
@@ -344,15 +347,7 @@ char *receive_confirmation(int fd_tcp, char *msg)
     nread = tcp_receive(WELCOME_LEN, ptr, fd_tcp);
     if(nread == -1)
     {
-        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem TCP...\n");
-        free(timeout);
-        free(msg);
-        return NULL;
-    }
-    //Dúvida do RG - Ele aqui pode receber mais do que o espaço que alocou?
-    else if(nread > WELCOME_LEN)
-    {
-        if(flag_d) printf("Recebidos mais caracteres do que o possível do par...\n");
+        if(flag_d) fprintf(stderr, "Erro ao receber a mensagem TCP vinda do par...\n");
         free(timeout);
         free(msg);
         return NULL;
@@ -362,6 +357,34 @@ char *receive_confirmation(int fd_tcp, char *msg)
 
     free(timeout);
     return msg;
+}
+
+
+//Recebe endereço de redirecionamento
+int get_redirect(char *pop_addr, char *pop_tport, char *msg)
+{
+    char *token = NULL;
+
+
+    token = strtok(msg, " ");
+
+    token = strtok(NULL, ":");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o IP de redirecionamento...\n");
+        return -1;
+    }
+    strcpy(pop_addr, token);
+
+    token = strtok(NULL, "\n");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o porto TCP de redirecionamento...\n");
+        return -1;
+    }
+    strcpy(pop_tport, token);
+
+    return 0;
 }
 
 int newpop(int fd_pop, char *ipaddr, char *tport)
@@ -374,7 +397,7 @@ int newpop(int fd_pop, char *ipaddr, char *tport)
     n = tcp_send(strlen(buffer), buffer, fd_pop);
     if(n == -1)
     {
-        if(flag_d) printf("Erro durante o envio da mensagem NEWPOP.\n");
+        if(flag_d) printf("Erro durante o envio da mensagem New Pop...\n");
         return -1;
     }
 
@@ -384,6 +407,10 @@ int newpop(int fd_pop, char *ipaddr, char *tport)
 
 }
 
+////////////////////////////////////////// Comunicação entre pares /////////////////////////////////////////////////////
+
+
+/////////////////////////////////////// Descoberta de pontos de acesso /////////////////////////////////////////////////
 int pop_query(int query_id, int bestpops, int fd)
 {
     int n;
@@ -391,7 +418,7 @@ int pop_query(int query_id, int bestpops, int fd)
 
     //comprimento do buffer é o comprimento de POP_QUERY sem indicar bestpops e
     //o nº de casas decimais de bestpops
-    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops%10 + 1));
+    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops/10 + 1));
     if(buffer == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: pop_query_malloc: %s\n", strerror(errno));
@@ -427,7 +454,7 @@ void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
     token = strtok(NULL, " ");
 
     *queryID = atoi(token);
-  
+
 
     token = strtok(NULL, "\n");
 
@@ -461,7 +488,7 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     char *msg = NULL;
     int n;
 
-    msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + avails%10 + 1));
+    msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + avails/10 + 1 + 1));
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: send_pop_reply: malloc: %s\n", strerror(errno));
@@ -489,6 +516,9 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     return 1;
 
 }
+
+
+
 
 int send_tree_query(char *ip, char *tport, int fd)
 {

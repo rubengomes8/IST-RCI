@@ -17,7 +17,7 @@ int tcp_socket_connect(char *host, char *service)
   n = getaddrinfo(host, service, &hints, &res);
   if(n != 0)
   {
-    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: getaddrinfo: %s\n", gai_strerror(n));
+    if(flag_d) fprintf(stderr, "Erro: tcp_socket_connect: getaddrinfo: %s\n", gai_strerror(n));
     freeaddrinfo(res);
     return -1;
   }
@@ -25,7 +25,7 @@ int tcp_socket_connect(char *host, char *service)
   fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if(fd == -1)
   {
-    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: socket: %s\n", strerror(errno));
+    if(flag_d) fprintf(stderr, "Erro: tcp_socket_connect: socket: %s\n", strerror(errno));
     freeaddrinfo(res);
     return -1;
   }
@@ -33,7 +33,7 @@ int tcp_socket_connect(char *host, char *service)
   n = connect(fd, res->ai_addr, res->ai_addrlen);
   if(n == -1)
   {
-    if(flag_d) fprintf(stderr, "Error: tcp_socket_connect: connect: %s\n", strerror(errno));
+    if(flag_d) fprintf(stderr, "Erro: tcp_socket_connect: connect: %s\n", strerror(errno));
     close(fd);
     freeaddrinfo(res);
     return -1;
@@ -44,9 +44,22 @@ int tcp_socket_connect(char *host, char *service)
   return fd;
 }
 
+//Envia mensagem tcp com máximo de nbytes, apontada pelo ponteiro ptr, para o file descriptor fd
 int tcp_send(int nbytes, char *ptr, int fd)
 {
   int nleft, nwritten;
+  //Proteger contra sigpipe
+
+  struct sigaction act;
+
+  memset(&act, 0, sizeof(act));
+  act.sa_handler = SIG_IGN;
+
+  if(sigaction(SIGPIPE, &act, NULL) == -1)
+  {
+      fprintf(stderr, "Perdida a ligação ao par durante a escrita...\n");
+      return 0;
+  }
 
   nleft = nbytes;
 
@@ -57,7 +70,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
     nwritten = write(fd, ptr, nleft);
     if(nwritten < 0)
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_send: write: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: tcp_send: write: %s\n", strerror(errno));
         return -1;
     }
     else if(nwritten == 0)
@@ -71,6 +84,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
   return nwritten; //success
 }
 
+//Recebe mensagem de fd, com máximo de nbytes e escreve-a em ptr
 int tcp_receive(int nbytes, char *ptr, int fd)
 {
     int nleft, nread;
@@ -78,14 +92,14 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     nleft = nbytes;
     int flag = 0;
 
-
+    //Lê até encontrar um \n
     while (flag == 0 || *(ptr-1) != '\n')
     {
         flag = 1;
         nread = read(fd, ptr, nleft);
         if(nread == -1)
         {
-            if(flag_d) fprintf(stderr, "Error: tcp_receive: read: %s\n", strerror(errno));
+            if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));
             return -1;
         }
         else if(nread == 0)
@@ -96,6 +110,7 @@ int tcp_receive(int nbytes, char *ptr, int fd)
         ptr += nread;
     }
     nread = nbytes - nleft;
+    //Se calhar pôr \0 sempre aqui no fim da mensagem
     return nread;
 }
 
@@ -116,7 +131,7 @@ int tcp_bind(char *service, int tcp_sessions)
     n = getaddrinfo(NULL, service, &hints, &res);
     if(n!=0)
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_bind: getaddrinfo: %s\n", gai_strerror(n));
+        if(flag_d) fprintf(stderr, "Erro: tcp_bind: getaddrinfo: %s\n", gai_strerror(n));
         freeaddrinfo(res);
         return -1;
     }
@@ -124,7 +139,7 @@ int tcp_bind(char *service, int tcp_sessions)
     fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if(fd == -1)
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_bind: socket: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: tcp_bind: socket: %s\n", strerror(errno));
         freeaddrinfo(res);
         return -1;
     }
@@ -132,7 +147,7 @@ int tcp_bind(char *service, int tcp_sessions)
     n = bind(fd, res->ai_addr, res->ai_addrlen);
     if(n == -1)
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_bind: bind: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: tcp_bind: bind: %s\n", strerror(errno));
         freeaddrinfo(res);
         close(fd);
         return -1;
@@ -141,7 +156,7 @@ int tcp_bind(char *service, int tcp_sessions)
     n = listen(fd, tcp_sessions);
     if(n == -1)
     {
-        if(flag_d) fprintf(stderr, "Error: tcp_bind: listen: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: tcp_bind: listen: %s\n", strerror(errno));
         freeaddrinfo(res);
         close(fd);
         return -1;
@@ -160,7 +175,7 @@ int *fd_array_init(int tcp_sessions)
     fd_array = (int *)malloc(sizeof(int)*tcp_sessions);
     if(fd_array == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: fd_array_init: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: fd_array_init: malloc: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -197,7 +212,7 @@ int tcp_accept(int fd_server)
 
     if((fd = accept(fd_server, (struct sockaddr*)&addr, &addrlen)) == -1)
     {
-        if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: new_connection: accept: %s\n", strerror(errno));
         return -1;
     }
 
@@ -218,7 +233,7 @@ int new_connection(int fd, int *fd_array, int tcp_sessions)
     //Recebe um novo pedido de ligação
     if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1)
     {
-        if(flag_d) fprintf(stderr, "Error: new_connection: accept: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: new_connection: accept: %s\n", strerror(errno));
         return -1;
     }
 
@@ -242,29 +257,4 @@ int new_connection(int fd, int *fd_array, int tcp_sessions)
     return i;
 }
 
-void tcp_echo_communication(int *fd_array, char *buffer, int i)
-{
-    int n;
 
-    if((n = read(fd_array[i], buffer, BUFFER_SIZE)) != 0)
-    {
-        //Caso haja um erro de leitura imprime o erro no ecrã e fecha a ligação
-        if(n == -1)
-        {
-            if(flag_d) fprintf(stderr, "Error: tcp_echo_communications: read: %s\n", strerror(errno));
-            close(fd_array[i]);
-            fd_array[i] = -1;
-        }
-        else
-        {
-            //Caso não haja nenhum erro, envia a mensagem
-            write(fd_array[i], buffer, n);
-        }
-    }
-    else
-    {
-        //Se o valor retornado por read for 0, a ligação foi fechada pelo peer
-        close(fd_array[i]);
-        fd_array[i] = -1;
-    }
-}

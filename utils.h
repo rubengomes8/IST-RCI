@@ -25,31 +25,16 @@
 #include "udp.h"
 #include "root_server.h"
 
-
+//Funções relacionadas com a leitura e validação de argumentos
 void sinopse();
 int count_specific_char(char *string, char ch);
+void stream_id_to_lowercase(char *streamID);
 int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char uport[], char rsaddr[],
         char rsport[], int *tcp_sessions, int *bestpops, int *tsecs, int *flag_h, char *streamID, char *streamNAME,
         char *streamIP, char *streamPORT);
 int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char *streamIP, char* streamPORT);
-void stream_id_to_lowercase(char *streamID);
-char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport);
-void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addrinfo *res_rs, int fd_rs);
-int get_redirect(char *pop_addr, char *pop_tport, char *msg);
-void free_and_close(int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo *res_pop, struct addrinfo *res_ss, int *fd_array);
 
-//Funções de coisas que estavam no iamroot.c
-int source_server_connect(int fd_rs, struct addrinfo *res_rs, struct addrinfo *res_ss, char *streamIP, char *streamPORT);
-int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, struct addrinfo *res_ss, char *ipaddr, int tcp_sessions);
-int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_ss);
-int install_access_server(int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo *res_ss,
-                          struct addrinfo **res_udp, char *uport, int *fd_array);
-int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, int fd_rs, struct addrinfo *res_rs,
-                     char *pop_addr, char *pop_tport);
-int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs, struct addrinfo *res_udp, struct addrinfo* res_pop);
-int wait_for_confirmation(char *pop_addr, char* pop_tport, int fd_rs, struct addrinfo *res_rs, int fd_udp, struct addrinfo *res_udp, int fd_pop, struct addrinfo *res_pop, char *streamID);
-void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addrinfo *res_rs, int fd_tcp_server, struct addrinfo* res_tcp, int fd_udp, struct addrinfo *res_udp, int *fd_array);
-int install_tcp_server_not_root(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, struct addrinfo *res_ss, char *ipaddr, int tcp_sessions, int fd_udp, struct addrinfo *res_udp);
+//Compara ips e portos
 int compare_ip_and_port(char *ip_rcvd, char *port_rcvd, char *ipaddr, char *tport);
 
 #endif //UTILS_UTILS_H

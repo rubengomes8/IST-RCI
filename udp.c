@@ -16,7 +16,7 @@ int udp_socket(char *host, char *service, struct addrinfo **res)
   errcode = getaddrinfo(host, service, &hints, res);
   if(errcode != 0)
   {
-    if(flag_d) fprintf(stderr, "Error: udp_socket: getaddrinfo: %s\n", gai_strerror(errcode));
+    if(flag_d) fprintf(stderr, "Erro: udp_socket: getaddrinfo: %s\n", gai_strerror(errcode));
     return -1;
   }
 
@@ -25,7 +25,7 @@ int udp_socket(char *host, char *service, struct addrinfo **res)
   fd = socket(aux->ai_family, aux->ai_socktype, aux->ai_protocol);
   if(fd == -1)
   {
-    if(flag_d) fprintf(stderr, "Error: udp_socket: socket: %s\n", strerror(errno));
+    if(flag_d) fprintf(stderr, "Erro: udp_socket: socket: %s\n", strerror(errno));
     return -1;
   }
 
@@ -39,7 +39,7 @@ void udp_send(int fd, char* msg, int msg_len, int flags, struct addrinfo *res)
   n = sendto(fd, msg, msg_len, flags, res->ai_addr, res->ai_addrlen);
   if(n == -1)
   {
-    fprintf(stderr, "Error: udp_send: sendto: %s\n", strerror((errno)));
+    if(flag_d) fprintf(stderr, "Erro: udp_send: sendto: %s\n", strerror((errno)));
     exit(1);
   }
 }
@@ -56,15 +56,13 @@ int udp_receive(int fd, int *msg_len, char* buffer, int flags, struct sockaddr_i
 
   // n é o número de caracteres recebidos
   n = recvfrom(fd, buffer, *msg_len, flags, (struct sockaddr *)&addr_aux, addrlen);
-  if (n == -1) {
-    if(flag_d) fprintf(stderr, "Error: udp_receive: recvfrom failed: %s\n", strerror(errno));
+  if (n == -1)
+  {
+    if(flag_d) fprintf(stderr, "Erro: udp_receive: recvfrom failed: %s\n", strerror(errno));
     return -1;
   }
 
-
-
-  // Certificação de que a string acaba em \0. É provável que seja necessário acrescentar mais verificações no futuro
-  // Talvez seja também melhor passar a alocar strings dinamicamente
+  //Certificação de que a stream acaba em \0
   if(*msg_len > n)
   {
     buffer[n] = '\0';
@@ -80,26 +78,7 @@ int udp_receive(int fd, int *msg_len, char* buffer, int flags, struct sockaddr_i
   return n;
 }
 
-
-// Telvez seja bom/preciso pôr isto a retornar o host e o service em vez de os imprimir
-void print_sender(struct sockaddr_in addr, unsigned int addrlen, int flags)
-{
-  char host[NI_MAXHOST], service[NI_MAXSERV]; //constantes vindas de netdb.h
-  int errcode = 0;
-
-  if((errcode=getnameinfo((struct sockaddr *)&addr, addrlen, host, sizeof(host), service, sizeof(service), flags)) != 0)
-  {
-    fprintf(stderr, "Error: print_sender: getnameinfo: %s\n", gai_strerror(errcode));
-    exit(1);
-  }
-  else
-  {
-    printf("Sent by [%s:%s]\n", host, service);
-  }
-}
-
-
-//A partir daqui são funções do udp_server.c
+///////////////////////////////////////// Funções UDP Server ///////////////////////////////////////////////////////////
 
 int udp_bind(int fd, struct addrinfo *res)
 {
@@ -109,7 +88,7 @@ int udp_bind(int fd, struct addrinfo *res)
   n = bind(fd, res->ai_addr, res->ai_addrlen);
   if(n == -1)
   {
-    if(flag_d) fprintf(stderr, "Error: udp_bind: bind: %s\n", strerror(errno));
+    if(flag_d) fprintf(stderr, "Erro: udp_bind: bind: %s\n", strerror(errno));
     return -1;
   }
 
@@ -123,7 +102,7 @@ void udp_answer(int fd, char* msg, int msg_len, int flags, struct sockaddr *addr
   n = sendto(fd, msg, msg_len, flags, addr, addrlen);
   if(n == -1)
   {
-    fprintf(stderr, "Error: udp_answer: sendto: %s\n", strerror((errno)));
+    if(flag_d) fprintf(stderr, "Erro: udp_answer: sendto: %s\n", strerror((errno)));
     exit(1);
   }
 }

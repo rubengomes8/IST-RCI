@@ -30,7 +30,7 @@ iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o
 # To create the object file iamroot.o, we need the source
 # files iamroot.c, udp.h, tcp.h, utils.h and interface,h:
 #
-iamroot.o:  iamroot.c tcp.h udp.h utils.h interface.h queue.h
+iamroot.o:  iamroot.c tcp.h udp.h utils.h interface.h queue.h iamroot.h
 	$(CC) $(CFLAGS) -c iamroot.c
 
 # To create the object file udp.o, we need the source files

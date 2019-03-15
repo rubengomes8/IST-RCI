@@ -12,7 +12,7 @@ extern int ascii;
 //com libertação de memória e tudo o resto
 
 
-void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
+void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops)
 {
     int maxfd, counter;
@@ -250,7 +250,6 @@ void interface_root(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_r
                         }
                     }
                 }
-
             }
         }
 
