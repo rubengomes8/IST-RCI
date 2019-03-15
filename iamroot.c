@@ -24,6 +24,14 @@
 #define ASCII 1
 
 
+/***************************************************************************** Dúvidas **************************************************************************************
+-> temos de criar buffers intermédios para cada um dos file descriptors a jusante e a montante pq quando se recebe pode se receber mais do q 1 mensagem. e assim vai se ao buffer,
+le se uma mensagem completa se houver (se nao houver vai se outra vez para o select)
+
+-> neste momento estamos a meter o TCP_receive a ler um valor gigante de 10000 bytes, não é de certeza a melhor implementação. ler 1 a 1 é boa ideia?
+****************************************************************************************************************************************************************************/
+
+
 //Vamos precisar de as usar várias vezes, por isso defini como variáveis globais
 int flag_b = FLAG_B; //apresenta os dados da stream na interface quando está a 1
 int flag_d = FLAG_D; //apresenta informação detalhada do funcionamento da aplicação quando está a 1

@@ -461,7 +461,7 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     char *msg = NULL;
     int n;
 
-    msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + avails%10 + 1));
+    msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + (avails/10)+1 + 1));
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: send_pop_reply: malloc: %s\n", strerror(errno));
@@ -541,13 +541,13 @@ void receive_tree_query(char *ptr, char *ip, char *tport){
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd)
 {
     char *msg = NULL;
-    char tcp_sessions_str[4];
-    int size_tcp_sessions;
-    sprintf(tcp_sessions_str, "%d", tcp_sessions);
-    size_tcp_sessions = strlen(tcp_sessions_str);
+    struct _queue* redirect_aux = NULL;
+    char ip_aux[IP_LEN + 1] = "\0";
+    char port_aux[PORT_LEN + 1] = "\0";
+    char ip_port[IP_LEN + PORT_LEN + 2] = "\0"; // 2 -> ':' e '\n'
+    int n;
 
-
-    msg = (char *)malloc(sizeof(char)*(TR_MIN_LEN + size_tcp_sessions + tcp_occupied*TR_LEN_BY_OCCUPIED));
+    msg = (char *)malloc(sizeof(char)*(TR_MIN_LEN + (tcp_sessions/10)+1 + tcp_occupied*TR_LEN_BY_OCCUPIED));
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
@@ -558,18 +558,43 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
 
     //Percorrer a lista de redirects tantas vezes quanto o número tcp_occupied e para cada uma delas acrescentar à TREE REPLY a seguinte string:
     //"<addr>:<port>\n"
-
+    redirect_aux = redirect_queue_head;
+    while(redirect_aux != NULL)
+    {
+        strcpy(ip_aux,getIP(redirect_aux));
+        strcpy(port_aux, getPORT(redirect_aux));
+        sprintf(ip_port, "%s:%s\n", ip_aux, port_aux);
+        strcat(msg, ip_port);
+        redirect_aux = getNext(redirect_aux);
+    }
 
     //No final acrescentar um \n à string resultante
-
+    strcat(msg, "\n");
     //Enviar a string
+    n = tcp_send(strlen(msg), msg, fd);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro duranto o envio da mensagem TREE_REPLY\n");
+        free(msg);
+        return -1;
+    }
+    else if(n == 0)
+    {
+        if(flag_d) printf("Falha ao enviar a mensagem TREE_REPLY: conexão terminada pelo peer\n");
+        free(msg);
+        return 0;
+    }
 
-    return 0;
+    free(msg);
+    return 1;
 }
 
-void receive_tree_reply(char *ptr, char *ip, char *tport, int tcp_sessions)
+
+void receive_tree_reply(char *ptr, int fd)
 {
 
 }
+
+
 
 
