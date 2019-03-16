@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
                 send_new_pop(fd_pop, ipaddr, tport, fd_rs, res_rs, fd_tcp_server, fd_array);
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
                 interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
-                        fd_tcp_server, fd_array, bestpops, fd_pop);
+                        fd_tcp_server, fd_array, bestpops, fd_pop, pop_addr, pop_tport);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }

@@ -17,7 +17,7 @@
 
 //Comunicação entre pares
 //Adesão à árvores
-#define WELCOME_LEN 8 //comprimento máximo da mensagem WELCOME
+#define WELCOME_LEN 68 //comprimento máximo da mensagem WELCOME
 #define REDIRECT_LEN 25 //comprimento máximo da mensagem REDIRECT
 #define NEWPOP_LEN 	25//comprimento máximo da mensagem NEWPOP 2+1+15+1+5+1
 
@@ -53,7 +53,9 @@ void popresp(int fd_udp, char* streamID, char *ipaddr, char *tport);
 
 ////////////////////////////////////////// Comunicação entre pares /////////////////////////////////////////////////////
 //Addesão à árvore
+int welcome(int tcp_sessions, int *tcp_occupied, int fd_tcp_server, int *fd_array, char *streamID);
 char *receive_confirmation(int fd_tcp, char *msg);
+void redirect(int fd_tcp_server, char *ip, char *port);
 int get_redirect(char *pop_addr, char *pop_tport, char *msg);
 int newpop(int fd_pop, char *ipaddr, char *tport);
 

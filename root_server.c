@@ -164,7 +164,7 @@ void remove_stream(int fd_rs, struct addrinfo *res_rs, char *streamID)
 
 int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport)
 {
-    char msg[POPREQ_LEN];
+    char msg[POPREQ_LEN] = "";
     int msg_len = POPREQ_LEN;
     char msg_rcv[POPRESP_LEN];
     int msg_rcv_len = POPRESP_LEN;
@@ -299,6 +299,39 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 //////////////////////////////////// Comunicação entre pares ///////////////////////////////////////////////////////////
 
 /////////////////////////////////////// Adesão à árvore ////////////////////////////////////////////////////////////////
+//Envia uma mensagem welcome e acrescenta um novo file descriptor ao array de file descriports, retornando o seu índice
+int welcome(int tcp_sessions, int *tcp_occupied, int fd_tcp_server, int *fd_array, char *streamID)
+{
+    char buffer[BUFFER_SIZE];
+    char *ptr;
+    int i = -1;
+
+
+    i = new_connection(fd_tcp_server, fd_array, tcp_sessions);
+    if (i == -1)
+    {
+        if (flag_d) printf("Novo pedido de ligação recusado...\n");
+    }
+    else
+    {
+        if (flag_d)
+        {
+            printf("Pedido de ligação aceite...\n");
+            printf("A enviar uma mensagem WELCOME ao peer...\n");
+        }
+        sprintf(buffer, "WE %s\n", streamID);
+        ptr = buffer;
+        tcp_send(strlen(ptr), ptr, fd_array[i]);
+        if (flag_d)
+        {
+            printf("Mensagem enviada ao peer: %s\n", ptr);
+        }
+        (*tcp_occupied)++;
+    }
+
+    return i;
+}
+
 //Retorna NULL se não receber resposta
 char *receive_confirmation(int fd_tcp, char *msg)
 {
@@ -359,6 +392,35 @@ char *receive_confirmation(int fd_tcp, char *msg)
     return msg;
 }
 
+//Redireciona um peer
+void redirect(int fd_tcp_server, char *ip, char *port)
+{
+    int refuse_fd = -1;
+    char buffer[BUFFER_SIZE];
+    char* ptr;
+
+    refuse_fd = tcp_accept(fd_tcp_server);
+    if(refuse_fd == -1)
+    {
+        if(flag_d) printf("Falha ao aceitar o novo peer...\n");
+    }
+    else
+    {
+        if(flag_b)
+        {
+            printf("A aplicação já não tem capacidade para aceitar novas ligações a jusante...\n");
+            printf("A redirecionar o peer...\n");
+        }
+        //Dar um endereço válido aqui
+        sprintf(buffer, "RE %s:%s\n", ip, port);
+        ptr = buffer;
+        tcp_send(strlen(ptr), ptr, refuse_fd);
+        if(flag_d)
+        {
+            printf("Mensagem enviada ao peer: %s\n", ptr);
+        }
+    }
+}
 
 //Recebe endereço de redirecionamento
 int get_redirect(char *pop_addr, char *pop_tport, char *msg)
@@ -418,7 +480,7 @@ int pop_query(int query_id, int bestpops, int fd)
 
     //comprimento do buffer é o comprimento de POP_QUERY sem indicar bestpops e
     //o nº de casas decimais de bestpops
-    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops/10 + 1));
+    buffer =(char*)malloc(sizeof(char)*(POP_QUERY_MIN_LEN + bestpops/10 + 1 + 1));
     if(buffer == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: pop_query_malloc: %s\n", strerror(errno));
@@ -512,13 +574,14 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
         return 0;
     }
 
+    if(flag_d) printf("Mensagem enviada ao par a montante: %s\n", msg);
+
     free(msg);
     return 1;
 }
 
 
-
-
+/////////////////////////////////// Monitorização da estrutura da árvore ///////////////////////////////////////////////
 int send_tree_query(char *ip, char *tport, int fd)
 {
     char *msg = NULL;
@@ -536,13 +599,13 @@ int send_tree_query(char *ip, char *tport, int fd)
     n = tcp_send(strlen(msg), msg, fd);
     if(n == -1)
     {
-        if(flag_d) printf("Erro duranto o envio da mensagem TREE_QUERY\n");
+        if(flag_d) printf("Erro duranto o envio da mensagem Tree Query\n");
         free(msg);
         return -1;
     }
     else if(n == 0)
     {
-        if(flag_d) printf("Falha ao enviar a mensagem TREE_QUERY: conexão terminada pelo peer\n");
+        if(flag_d) printf("Falha ao enviar a mensagem Tree Query: conexão terminada pelo peer\n");
         free(msg);
         return 0;
     }

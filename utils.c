@@ -363,23 +363,6 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
 	return has_stream;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //Compara 2 ip's e 2 portos, se os dois portos e os dois ip's coinciderem returna 0, caso contário retorna -1
 //vai ser usada para comparar se o ip e o port que recebeu no tree query correspondem ao seu
 int compare_ip_and_port(char *ip_rcvd, char *port_rcvd, char *ipaddr, char *tport)
