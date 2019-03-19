@@ -146,11 +146,11 @@ int main(int argc, char *argv[])
 
 
                 ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
-                fd_udp = install_access_server(fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
+                fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_ss, fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                        fd_udp, fd_tcp_server, fd_array, bestpops);
+                        fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -183,8 +183,8 @@ int main(int argc, char *argv[])
                 //Em que ipaddr e tport representam o IP e o porto do novo ponto de adesão
                 send_new_pop(fd_pop, ipaddr, tport, fd_rs, res_rs, fd_tcp_server, fd_array);
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
-                interface_not_root(fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied, fd_udp,
-                        fd_tcp_server, fd_array, bestpops, fd_pop, pop_addr, pop_tport);
+                interface_not_root(fd_rs, res_rs, streamID, streamIP, streamPORT, &is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
+                        fd_tcp_server, fd_array, bestpops, fd_pop, pop_addr, pop_tport, rsaddr, rsport);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }
@@ -319,11 +319,12 @@ int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *re
 }
 
 //Instala servidor de acessos UDP
-int install_access_server(int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp, char *uport, int *fd_array)
+int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp, char *uport, int *fd_array)
 {
     int fd_udp = -1;
 
-    fd_udp = udp_socket(NULL, uport, res_udp);
+    printf("A instalar servidor de acessos UDP no endereço %s:%s...\n", ipaddr, uport);
+    fd_udp = udp_socket(ipaddr, uport, res_udp);
     if(fd_udp == -1)
     {
         if(flag_d)

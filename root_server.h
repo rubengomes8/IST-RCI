@@ -60,8 +60,8 @@ int get_redirect(char *pop_addr, char *pop_tport, char *msg);
 int newpop(int fd_pop, char *ipaddr, char *tport);
 
 //Interrupção e estabelecimento da stream
-//BORKEN STREAM
-//STREAM FLOWING
+int stream_flowing(int fd);
+int broken_stream(int fd);
 
 //Encapsulamento dos dados da stream
 //DATA

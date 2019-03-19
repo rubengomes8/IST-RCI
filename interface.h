@@ -4,12 +4,14 @@
 #include "root_server.h"
 #include "tcp.h"
 #include "queue.h"
+#include "iamroot.h"
 
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
-        int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops);
-void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char* ipaddr, char *uport,
-                        char *tport, int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array,
-                        int bestpops, int fd_pop, char *pop_addr, char *pop_tport);
+        int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
+        queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue);
+void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char *streamIP, char *streamPORT,
+        int *is_root, char* ipaddr, char *uport, char *tport, int tcp_sessions, int tcp_occupied, int fd_tcp_server,
+        int *fd_array, int bestpops, int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport);
 int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char *ipaddr, char* uport, char* tport,
                    int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, char *pop_addr, char *pop_tport,
                    int is_flowing);

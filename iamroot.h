@@ -36,7 +36,7 @@ int wait_for_confirmation(char *pop_addr, char* pop_tport, int fd_rs, struct add
 int source_server_connect(int fd_rs, struct addrinfo *res_rs, char *streamIP, char *streamPORT);
 int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, char *ipaddr, int tcp_sessions);
 int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs);
-int install_access_server(int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp, char *uport, int *fd_array);
+int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp, char *uport, int *fd_array);
 
 void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addrinfo *res_rs, int fd_tcp_server, int *fd_array);
 void free_and_close(int is_root, int fd_rs, int fd_udp, int fd_pop, int fd_ss, struct addrinfo *res_rs, int *fd_array);

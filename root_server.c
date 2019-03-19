@@ -580,6 +580,35 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     return 1;
 }
 
+///////////////////////////////// Interrupção e estabelecimento da stream //////////////////////////////////////////////
+int stream_flowing(int fd)
+{
+    char msg[4];
+    char *ptr;
+    int n;
+
+    sprintf(msg, "SF\n");
+    ptr = msg;
+
+    n = tcp_send(3, ptr, fd);
+
+    return n;
+}
+
+int broken_stream(int fd)
+{
+    char msg[4];
+    char *ptr;
+    int n;
+
+    sprintf(msg, "BS\n");
+    ptr = msg;
+
+    n = tcp_send(3, ptr, fd);
+
+    return n;
+}
+
 
 /////////////////////////////////// Monitorização da estrutura da árvore ///////////////////////////////////////////////
 int send_tree_query(char *ip, char *tport, int fd)

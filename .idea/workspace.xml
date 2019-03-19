@@ -13,16 +13,14 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot.c" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iamroot.h" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot.o" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.c" beforeDir="false" afterPath="$PROJECT_DIR$/interface.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.h" beforeDir="false" afterPath="$PROJECT_DIR$/interface.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.o" beforeDir="false" afterPath="$PROJECT_DIR$/interface.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/queue.o" beforeDir="false" afterPath="$PROJECT_DIR$/queue.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/root_server.c" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/root_server.h" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/root_server.o" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.c" beforeDir="false" afterPath="$PROJECT_DIR$/utils.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.o" beforeDir="false" afterPath="$PROJECT_DIR$/utils.o" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -35,8 +33,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/iamroot.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="518">
-              <caret line="177" column="28" selection-start-line="177" selection-start-column="28" selection-end-line="177" selection-end-column="28" />
+            <state relative-caret-position="347">
+              <caret line="148" column="55" selection-start-line="148" selection-start-column="55" selection-end-line="148" selection-end-column="55" />
             </state>
           </provider>
         </entry>
@@ -44,8 +42,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/root_server.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="480">
-              <caret line="576" column="71" selection-start-line="576" selection-start-column="71" selection-end-line="576" selection-end-column="71" />
+            <state relative-caret-position="570">
+              <caret line="606" column="29" lean-forward="true" selection-start-line="606" selection-start-column="29" selection-end-line="606" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -53,8 +51,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/iamroot.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="16" column="25" selection-start-line="16" selection-start-column="25" selection-end-line="16" selection-end-column="25" />
+            <state relative-caret-position="553">
+              <caret line="38" column="40" selection-start-line="38" selection-start-column="40" selection-end-line="38" selection-end-column="40" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/root_server.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="374">
+              <caret line="63" column="9" lean-forward="true" selection-start-line="63" selection-start-column="9" selection-end-line="63" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -62,8 +69,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/interface.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="285">
-              <caret line="15" column="128" selection-start-line="15" selection-start-column="128" selection-end-line="15" selection-end-column="128" />
+            <state relative-caret-position="190">
+              <caret line="10" column="87" selection-start-line="10" selection-start-column="87" selection-end-line="10" selection-end-column="87" />
               <folding>
                 <element signature="e#49#73#0" expanded="true" />
               </folding>
@@ -74,8 +81,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/interface.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="513">
-              <caret line="693" column="40" selection-start-line="693" selection-start-column="40" selection-end-line="693" selection-end-column="40" />
+            <state relative-caret-position="366">
+              <caret line="699" column="45" selection-start-line="699" selection-start-column="45" selection-end-line="699" selection-end-column="45" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -87,17 +94,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>create_fd_array</find>
-      <find>install_access_server</find>
-      <find>get_root_access_server</find>
-      <find>res_rs</find>
-      <find>get_root_acces</find>
-      <find>get_acce</find>
-      <find>connect_to_peer</find>
-      <find>wait_for_confirmation</find>
-      <find>get</find>
-      <find>get_redirect</find>
-      <find>install_tcp_server_not</find>
       <find>newpop</find>
       <find>wait_for</find>
       <find>freeaddrinfo(*res_udp)</find>
@@ -107,7 +103,6 @@
       <find>recei</find>
       <find>read_terminal</find>
       <find>welcome</find>
-      <find>get_root</find>
       <find>receive_newpop</find>
       <find>pop_quer</find>
       <find>receive_pop_reply</find>
@@ -115,8 +110,20 @@
       <find>receive_pop</find>
       <find>sent_pops</find>
       <find>requested_pops</find>
-      <find>send_pop_reply</find>
       <find>send_po</find>
+      <find>send_pop_reply</find>
+      <find>fd_udp</find>
+      <find>fd_rs</find>
+      <find>msg</find>
+      <find>buffer</find>
+      <find>is_root</find>
+      <find>get_root</find>
+      <find>get_data</find>
+      <find>install_acce</find>
+      <find>install_acces</find>
+      <find>who</find>
+      <find>stream_flowing</find>
+      <find>broken_stream</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -132,18 +139,19 @@
         <option value="$PROJECT_DIR$/tcp.c" />
         <option value="$PROJECT_DIR$/udp.h" />
         <option value="$PROJECT_DIR$/makefile" />
-        <option value="$PROJECT_DIR$/iamroot.h" />
         <option value="$PROJECT_DIR$/utils.c" />
         <option value="$PROJECT_DIR$/utils.h" />
-        <option value="$PROJECT_DIR$/iamroot.c" />
         <option value="$PROJECT_DIR$/udp.c" />
-        <option value="$PROJECT_DIR$/root_server.h" />
         <option value="$PROJECT_DIR$/interface.h" />
+        <option value="$PROJECT_DIR$/iamroot.h" />
+        <option value="$PROJECT_DIR$/iamroot.c" />
+        <option value="$PROJECT_DIR$/root_server.h" />
         <option value="$PROJECT_DIR$/root_server.c" />
         <option value="$PROJECT_DIR$/interface.c" />
       </list>
     </option>
   </component>
+  <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="293" />
     <option name="y" value="53" />
@@ -203,12 +211,12 @@
       <workItem from="1551556840257" duration="2819000" />
       <workItem from="1551643700542" duration="59333000" />
       <workItem from="1551995450083" duration="18729000" />
-      <workItem from="1552053989399" duration="77224000" />
+      <workItem from="1552053989399" duration="85989000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="158105000" />
+    <option name="totallyTimeSpent" value="166870000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
@@ -302,48 +310,48 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/root_server.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="55" column="99" selection-start-line="55" selection-start-column="99" selection-end-line="55" selection-end-column="99" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/iamroot.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="16" column="25" selection-start-line="16" selection-start-column="25" selection-end-line="16" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/iamroot.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="518">
-          <caret line="177" column="28" selection-start-line="177" selection-start-column="28" selection-end-line="177" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/interface.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="15" column="128" selection-start-line="15" selection-start-column="128" selection-end-line="15" selection-end-column="128" />
+        <state relative-caret-position="190">
+          <caret line="10" column="87" selection-start-line="10" selection-start-column="87" selection-end-line="10" selection-end-column="87" />
           <folding>
             <element signature="e#49#73#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/iamroot.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="553">
+          <caret line="38" column="40" selection-start-line="38" selection-start-column="40" selection-end-line="38" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/iamroot.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="347">
+          <caret line="148" column="55" selection-start-line="148" selection-start-column="55" selection-end-line="148" selection-end-column="55" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/root_server.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="576" column="71" selection-start-line="576" selection-start-column="71" selection-end-line="576" selection-end-column="71" />
+        <state relative-caret-position="570">
+          <caret line="606" column="29" lean-forward="true" selection-start-line="606" selection-start-column="29" selection-end-line="606" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/root_server.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="63" column="9" lean-forward="true" selection-start-line="63" selection-start-column="9" selection-end-line="63" selection-end-column="9" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/interface.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="513">
-          <caret line="693" column="40" selection-start-line="693" selection-start-column="40" selection-end-line="693" selection-end-column="40" />
+        <state relative-caret-position="366">
+          <caret line="699" column="45" selection-start-line="699" selection-start-column="45" selection-end-line="699" selection-end-column="45" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
           </folding>
