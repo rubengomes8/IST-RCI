@@ -65,6 +65,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         maxfd = max(maxfd, fd_ss);
         fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
+        //Verifica se flag_tree está ativa e se estiver envia TREE_QUERY a todos os filhos
+        /*
+        if(tree_query)
+        {
+            //invoke
+        }
+        */
+
         //Espera que 1 ou mais file descriptors estejam prontos
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL,  (struct timeval *)NULL);
         if(counter <= 0)
@@ -73,7 +81,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             return;
         }
 
-        if(FD_ISSET(fd_ss, &fd_read_set))
+        if(FD_ISSET(fd_ss, &fd_read_set)) //Servidor fonte
         {
 
 
@@ -203,7 +211,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         else if(!strcmp("TR", buffer))
                         {
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
-                            //Receber TR
+                            //Receber o tree reply
+
                         }
                     }
                     ptr = NULL;
@@ -544,9 +553,17 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         {
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                             //Receber TR
-                            //receive_tree_reply(ptr, fd);
-
-
+                            n = receive_tree_reply_and_propagate(ptr, fd_pop, fd_array[i]);
+                            if(n == 10)
+                            {
+                                //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                                if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                                close(fd_array[i]);
+                                fd_array[i] = -1;
+                                tcp_occupied--;
+                                redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
+                                if(redirect_queue_head == NULL) empty_redirect_queue = 1;
+                            }
                         }
                     }
                     ptr = NULL;
@@ -1277,10 +1294,11 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
         printf("Debug off\n");
         flag_d = 0;
     }
-    else if(!strcasecmp(buffer, "tree\n"))
+    else if(!strcasecmp(buffer, "tree\n") && is_root)
     {
         //Apresentar estrutura da transmissão
         printf("Estrutura de transmissão em árvore\n");
+        //meter flag global a 1 e na interface_root se tiver flag ativa chamar função q envia tree query aos filhos
     }
     else if(!strcasecmp(buffer, "exit\n"))
     {

@@ -709,10 +709,10 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
         redirect_aux = getNext(redirect_aux);
     }
 
-    //No final acrescentar um \n à string resultante
+    //No final acrescentar um \n e \0 à string resultante
     strcat(msg, "\n");
     //Enviar a string
-    n = tcp_send(strlen(msg), msg, fd);
+    n = tcp_send(strlen(msg), msg, fd); 
     if(n == -1)
     {
         if(flag_d) printf("Erro duranto o envio da mensagem TREE_REPLY\n");
@@ -731,8 +731,58 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
 }
 
 
-void receive_tree_reply(char *ptr, int fd)
+int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
 {
+    char *msg = NULL;
+    char msg_aux[TR_MAX_LEN];
+    int n;
+
+
+    msg = (char *)malloc(sizeof(char)*TR_MAX_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    strcpy(msg, ptr);
+
+    while(1)
+    {
+        n = tcp_receive(TR_MAX_LEN, msg_aux, fd_son);
+         if(n == 0)
+        {
+            return 10;
+        }
+        else if(n == -1)
+        {
+            if(flag_d) printf("Falha ao comunicar com o peer a jusante com o file descriptor %d...\n", fd_son);
+        }
+        else
+        {
+            strcat(msg, msg_aux);
+            if(strlen(msg_aux) == 1 && !strcpy(msg_aux, "\n"))
+                break;
+        }
+        
+    }
+
+    n = tcp_send(strlen(msg), msg, fd_pop);
+    if(n == -1)
+    {
+        if(flag_d) printf("Erro duranto a propagação da mensagem TREE_REPLY\n");
+        free(msg);
+        return -1;
+    }
+    else if(n == 0)
+    {
+        if(flag_d) printf("Falha ao propagar a mensagem TREE_REPLY: conexão terminada pelo peer\n");
+        free(msg);
+        return 0;
+    }
+
+    free(msg);
+    return 1;
 
 }
 
