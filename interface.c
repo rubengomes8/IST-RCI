@@ -47,12 +47,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int is_flowing = 1;
 
     //Dados da stream
-    char data_header[9] = "\0";
-    char *header_ptr;
     char *data = NULL;
-    char *token = NULL;
-    int data_len;
-    char buffer2[BUFFER_SIZE];
+    char buffer_data[BUFFER_SIZE];
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -79,58 +75,51 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
         if(FD_ISSET(fd_ss, &fd_read_set))
         {
-            //Mandar broken stream em caso de perda de ligação
-            //is_flowing = 0;
-            /*for(i=0; i<tcp_sessions; i++)
+
+
+            data = buffer_data;
+            n = read(fd_ss, data, BUFFER_SIZE - 1);
+            //n = tcp_receive(BUFFER_SIZE -1, data, fd_ss);
+            if(n == 0)
             {
-                if(fd_array[i] != -1)
+                //Mandar broken stream em caso de perda de ligação
+                if(flag_d) printf("Perdida a ligação ao servidor fonte\n");
+                is_flowing = 0;
+                for(i=0; i<tcp_sessions; i++)
                 {
-                    n = broken_stream(fd_array[i]);
-                    if(n == 0)
+                    if(fd_array[i] != -1)
                     {
-                        //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                        close(fd_array[i]);
-                        fd_array[i] = -1;
-                        tcp_occupied--;
-                        redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                        if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                    }
-                    else if(n == -1)
-                    {
-                        if (flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                        n = broken_stream(fd_array[i]);
+                        if(n == 0)
+                        {
+                            //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                            if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                            close(fd_array[i]);
+                            fd_array[i] = -1;
+                            tcp_occupied--;
+                            redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
+                            if(redirect_queue_head == NULL) empty_redirect_queue = 1;
+                        }
+                        else if(n == -1)
+                        {
+                            if (flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                        }
                     }
                 }
-            }*/
-
-           /* header_ptr = data_header;
-            n = tcp_receive(8, header_ptr, fd_ss);
-
-            token = strtok(header_ptr, " ");
-            token = strtok(NULL, "\n");
-            data_len = (int)strtol(token, NULL, 16);*/
-
-         /*   data = (char*)malloc(sizeof(char)*data_len);
-            if(data == NULL)
-            {
-                if(flag_d) printf("Erro: malloc: %s", strerror(errno));
             }
+            else if(n == -1)
+            {
+                if(flag_d) printf("Erro a receber informação do servidor fonte!\n");
+            }
+            else
+            {
+                data[n] = '\0';
 
-            n = tcp_receive(data_len, data, fd_rs);
 
-            printf("Stream\n\n");
-            printf("%s", data);
-            free(data);
-            data_header[0] = '\0';*/
-
-         //printf("got here");
-            data = buffer2;
-            n = tcp_receive(BUFFER_SIZE -1, data, fd_ss);
-
-            data[BUFFER_SIZE - 1] = '\0';
-            printf("%s", data);
-            fflush(stdout);
-
+                // data[BUFFER_SIZE - 1] = '\0';
+                if(flag_b) printf("%s", data);
+                fflush(stdout);
+            }
         }
 
         //Lê algo dos pares TCP a jusante
