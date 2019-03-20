@@ -6,7 +6,7 @@ extern int flag_b;
 //Recebe host:service e retorna file descriptor do socket
 int tcp_socket_connect(char *host, char *service)
 {
-  struct addrinfo hints, *res;
+  struct addrinfo hints, *res = NULL;
   int fd, n;
 
   memset(&hints, 0, sizeof(hints));
@@ -18,7 +18,7 @@ int tcp_socket_connect(char *host, char *service)
   if(n != 0)
   {
     if(flag_d) fprintf(stderr, "Erro: tcp_socket_connect: getaddrinfo: %s\n", gai_strerror(n));
-    freeaddrinfo(res);
+    if(res != NULL) freeaddrinfo(res);
     return -1;
   }
 

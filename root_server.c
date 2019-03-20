@@ -57,7 +57,8 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
     n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
 
-    if(flag_d) printf("Mensagem recebida do servidor de raízes: %s\n", msg2);
+    if(flag_d) printf("Mensagem recebida do servidor de raízes:");
+    printf("%s\n", msg2);
 
     free(timeout);
     return 0;
@@ -508,19 +509,25 @@ int pop_query(int query_id, int bestpops, int fd)
     return 1;
 }
 
-void receive_pop_query(char *ptr, int *requested_pops, int *queryID)
+int receive_pop_query(char *ptr, int *requested_pops, int *queryID)
 {
     char *token = NULL;
 
     token = strtok(ptr, " ");
+    if(token == NULL) return -1;
+    token = NULL;
+
     token = strtok(NULL, " ");
-
-    *queryID = atoi(token);
-
+    if(token == NULL) return -1;
+    //conversão da string para hexa
+    *queryID = (int)strtol(token, NULL, 16);
+    token = NULL;
 
     token = strtok(NULL, "\n");
-
+    if(token == NULL) return -1;
     *requested_pops = atoi(token);
+
+    return 0;
 }
 
 int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
@@ -529,18 +536,31 @@ int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
     char *token = NULL;
 
     token = strtok(ptr, " "); //PR
+    if (token == NULL) return -1;
+    token = NULL;
 
     token = strtok(NULL, " ");//query ID
-    query_id = atoi(token);
+    if (token == NULL) return -1;
+
+
+    //conversão da string para hexa
+    query_id = (int)strtol(token, NULL, 16);
+    token = NULL;
 
     token = strtok(NULL, ":");
+    if (token == NULL) return -1;
     strcpy(ip, token);
+    token = NULL;
 
     token = strtok(NULL, " ");
+    if (token == NULL) return -1;
     strcpy(port, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
+    if (token == NULL) return -1;
     *available_sessions = atoi(token);
+    token = NULL;
 
     return query_id;
 }

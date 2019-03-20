@@ -323,7 +323,7 @@ int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *r
 {
     int fd_udp = -1;
 
-    printf("A instalar servidor de acessos UDP no endereço %s:%s...\n", ipaddr, uport);
+    if(flag_d) printf("A instalar servidor de acessos UDP no endereço %s:%s...\n", ipaddr, uport);
     fd_udp = udp_socket(ipaddr, uport, res_udp);
     if(fd_udp == -1)
     {
