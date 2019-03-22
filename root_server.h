@@ -24,6 +24,7 @@
 //Interrupção e estabelecimento da stream
 
 //Envapsulamento dos dados da stream
+#define DATA_HEADER_LEN 9
 
 //Descoberta de pontos de acesso
 #define POP_QUERY_MIN_LEN 9//comprimento mínimo da mensagem POPQUERY SEM indicar bestpops
@@ -65,6 +66,7 @@ int broken_stream(int fd);
 
 //Encapsulamento dos dados da stream
 //DATA
+int receive_data_header(int *data_len, char *msg);
 
 //Descoberta de pontos de acesso
 int pop_query(int query_id, int bestpops, int fd);

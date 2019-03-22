@@ -29,7 +29,7 @@ char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *r
 void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addrinfo *res_rs, int fd_rs);
 int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, int fd_rs, struct addrinfo *res_rs,
                      char *pop_addr, char *pop_tport);
-int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs);
+int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs, int flag);
 int wait_for_confirmation(char *pop_addr, char* pop_tport, int fd_rs, struct addrinfo *res_rs, int fd_udp, int fd_pop, char *streamID);
 
 

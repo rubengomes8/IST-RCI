@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
                 while(welcome == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
                     //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
-                    fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs);
+                    fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, 0);
 
                     //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
                     welcome = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, fd_pop, streamID);
@@ -448,25 +448,32 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
 }
 
 //Liga-se ao par a montante
-int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs)
+int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, struct addrinfo *res_rs, int flag)
 {
     int fd_pop = -1;
 
     if(flag_d) printf("A ligar-se ao par a montante, no endereço %s:%s\n", pop_addr, pop_tport);
 
+
     fd_pop = tcp_socket_connect(pop_addr, pop_tport);
     if(fd_pop == -1)
     {
-        if(flag_d)
+
+        if(flag_d) printf("Falha ao ligar-se ao par a montante...\n");
+        if(flag == 1)
         {
-            printf("Falha ao ligar-se ao par a montante...\n");
-            printf("A aplicação irá terminar...\n");
+            printf("A tentar ligar-se de novo...\n");
+            return -1;
         }
+        if(flag == 0) printf("A aplicação irá terminar...\n");
+
         if(fd_rs != -1) close(fd_rs);
         if(res_rs != NULL) freeaddrinfo(res_rs);
         if(fd_udp != -1) close(fd_udp);
         exit(0);
     }
+
+
 
     if(flag_d)
     {

@@ -96,7 +96,8 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     while (flag == 0 || *(ptr-1) != '\n')
     {
         flag = 1;
-        nread = read(fd, ptr, nleft);
+       // nread = read(fd, ptr, nleft);
+       nread = read(fd, ptr, 1); //lê um char de cada vez
         if(nread == -1)
         {
             if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));

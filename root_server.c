@@ -628,7 +628,21 @@ int broken_stream(int fd)
 
     return n;
 }
+/////////////////////////////////////////////////// Dados //////////////////////////////////////////////////////////////
+int receive_data_header(int *data_len, char *msg)
+{
+    char *token = NULL;
 
+    token = strtok(msg, " ");
+    if(token == NULL) return -1;
+    token = NULL;
+
+    token = strtok(NULL, "\n");
+    if(token == NULL) return -1;
+    *data_len = (int)strtol(token, NULL, 16);
+
+    return 0;
+}
 
 /////////////////////////////////// Monitorização da estrutura da árvore ///////////////////////////////////////////////
 int send_tree_query(char *ip, char *tport, int fd)
