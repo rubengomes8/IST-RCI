@@ -655,6 +655,7 @@ int send_tree_query(char *ip, char *tport, int fd)
     else if(n == 0)
     {
         if(flag_d) printf("Falha ao enviar a mensagem Tree Query: conexão terminada pelo peer\n");
+        //Temos de retirar o peer da lista de filhos acho eu
         free(msg);
         return 0;
     }
@@ -683,10 +684,13 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
 {
     char *msg = NULL;
     struct _queue* redirect_aux = NULL;
-    char ip_aux[IP_LEN + 1] = "\0";
-    char port_aux[PORT_LEN + 1] = "\0";
+    char ip_aux[IP_LEN + 1];
+    char port_aux[PORT_LEN + 1];
     char ip_port[IP_LEN + PORT_LEN + 2] = "\0"; // 2 -> ':' e '\n'
     int n;
+
+    ip_aux[0] = '\0';
+    port_aux[0] = '\0';
 
     msg = (char *)malloc(sizeof(char)*(TR_MIN_LEN + (tcp_sessions/10)+1 + tcp_occupied*TR_LEN_BY_OCCUPIED));
     if(msg == NULL)
@@ -784,6 +788,55 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
     free(msg);
     return 1;
 
+}
+
+
+int root_send_tree_query(queue *redirect_queue_head, int *fd_array)
+{
+    queue *aux = redirect_queue_head;
+    char *msg = NULL;
+    char ipaddr[IP_LEN + 1];
+    char tport[PORT_LEN + 1];
+    int n;
+    int index;
+
+    ipaddr[0] = '\0';
+    tport[0] = '\0';
+
+    msg = (char *)malloc(sizeof(char)*TQ_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+
+    while(aux != NULL)
+    {
+        strcpy(ipaddr,getIP(aux));
+        strcpy(tport, getPORT(aux));
+        sprintf(msg, "TQ %s:%s\n", ipaddr, tport);
+        index = getIndex(aux);
+        n = tcp_send(strlen(msg), msg, fd_array[index]);
+        //Falta verificar o valor do retorno e fazer os ajustes necessários à lista caso se tenha detetado que um par se desconectou
+        if(n == -1)
+        {
+            if(flag_d) printf("Erro duranto o envio da mensagem TREE_QUERY por parte da root\n");
+            free(msg);
+            return -1;
+        }
+        else if(n == 0)
+        {
+            if(flag_d) printf("Falha ao enviar a mensagem TREE_QUERY por parte da root: conexão terminada pelo peer\n");
+            //Temos de retirar o peer da lista de filhos acho eu
+
+            free(msg);
+            return 0;
+        }
+        aux = getNext(aux);
+    }
+
+    return 1;
 }
 
 

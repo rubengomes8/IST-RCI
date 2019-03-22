@@ -3,6 +3,7 @@
 
 extern int flag_d;
 extern int flag_b;
+extern int flag_tree;
 extern int ascii;
 
 #define MAX_BYTES 10000
@@ -22,6 +23,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int i;
     int n;
     int query_id = 0;
+
+    char tree_structure[MAX_BYTES];
 
     //Variáveis para lista de apps iamroot ligadas imadiatamente a jusante
     //Vão formar uma lista utilizada para redirects
@@ -66,12 +69,11 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
         //Verifica se flag_tree está ativa e se estiver envia TREE_QUERY a todos os filhos
-        /*
-        if(tree_query)
+        if(flag_tree)
         {
-            //invoke
+            n = root_send_tree_query(redirect_queue_head, fd_array);
         }
-        */
+
 
         //Espera que 1 ou mais file descriptors estejam prontos
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL,  (struct timeval *)NULL);
@@ -212,6 +214,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         {
                             if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
                             //Receber o tree reply
+                            //Vai receber de um filho e vai 
+
 
                         }
                     }
@@ -1299,6 +1303,7 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
         //Apresentar estrutura da transmissão
         printf("Estrutura de transmissão em árvore\n");
         //meter flag global a 1 e na interface_root se tiver flag ativa chamar função q envia tree query aos filhos
+        flag_tree = 1;
     }
     else if(!strcasecmp(buffer, "exit\n"))
     {

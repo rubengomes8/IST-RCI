@@ -108,6 +108,12 @@ queue *getNext(queue *element)
     return element->next;
 }
 
+int getIndex(queue *element)
+{
+    if(element == NULL) return -1;
+    return element->index;
+}
+
 int getAvailableSessions(queue *element)
 {
     if(element == NULL) return -1;

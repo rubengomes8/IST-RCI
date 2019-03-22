@@ -15,6 +15,7 @@ void freeElement(queue *element);
 char *getIP(queue *element);
 char *getPORT(queue *element);
 queue *getNext(queue *element);
+int getIndex(queue *element);
 int getAvailableSessions(queue *element);
 void decreaseAvailableSessions(queue *element);
 //retorna a nova head e atualiza a tail

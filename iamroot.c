@@ -13,6 +13,7 @@ le se uma mensagem completa se houver (se nao houver vai se outra vez para o sel
 //Vamos precisar de as usar várias vezes, por isso defini como variáveis globais
 int flag_b = FLAG_B; //apresenta os dados da stream na interface quando está a 1
 int flag_d = FLAG_D; //apresenta informação detalhada do funcionamento da aplicação quando está a 1
+int flag_tree = 0;
 int ascii = ASCII; //apresenta os dados da stream em ascii quando está a 1 e em hexadecimal quando está a 0
 
 int main(int argc, char *argv[])
