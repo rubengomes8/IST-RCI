@@ -33,6 +33,7 @@
 #define TQ_LEN 25 //comprimento máximo de uma TREE QUERY
 #define TR_MIN_LEN 26 //comprimento mínimo de uma TREE REPLY sem indicar endereços das ligações a jusante
 #define TR_LEN_BY_OCCUPIED 22 //comprimento de cada ligação a jusante a enviar na TREE REPLY
+#define TR_MAX_LEN 10000 //isto supostamente será para tirar - ver função receive_tree_reply_and_propagate
 
 //Definição do timeout
 #define TIMEOUT_SECS 10
@@ -78,6 +79,9 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd);
 int send_tree_query(char *ip, char *tport, int fd);
 void receive_tree_query(char *ptr, char *ip, char *tport);
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd);
-void receive_tree_reply(char *ptr, int fd);
+int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son);
+//Monitoriazação da estrutura da árvore de escoamento associada à root
+int root_send_tree_query(queue *redirect_queue_head, int *fd_array);
+
 
 #endif //RCI_ROOT_SERVER_H
