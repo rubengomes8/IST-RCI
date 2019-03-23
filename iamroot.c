@@ -166,7 +166,10 @@ int main(int argc, char *argv[])
                 get_root_access_server(rasaddr, rasport, msg, res_rs, fd_rs);
 
                 ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////////////
-                fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 0);
+                do
+                {
+                    fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 0, ipaddr);
+                }while(fd_udp == -2);
 
                 while(welcome == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
@@ -410,7 +413,7 @@ void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addr
 
 //Pede e recebe do servidor de acessos um ponto de ligação à stream
 int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, int fd_rs, struct addrinfo *res_rs,
-                     char *pop_addr, char *pop_tport, int flag_readesao)
+                     char *pop_addr, char *pop_tport, int flag_readesao, char *ipaddr)
 {
     int fd_udp = -1;
     int counter = 0;
@@ -465,6 +468,13 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
             if(*res_udp != NULL) freeaddrinfo(*res_udp);
             exit(0);
         }
+    }
+
+    if(!strcmp(pop_addr, ipaddr))
+    {
+        close(fd_udp);
+        freeaddrinfo(*res_udp);
+        return -2;
     }
 
     freeaddrinfo(*res_udp);

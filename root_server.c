@@ -563,20 +563,15 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
 
 
     n = tcp_send(strlen(msg), msg, fd);
-    if(n == -1)
+    if(n == 0)
     {
-        if(flag_d) printf("Erro duranto o envio da mensagem POP_REPLY\n");
-        free(msg);
-        return -1;
-    }
-    else if(n == 0)
-    {
-        if(flag_d) printf("Falha ao enviar a mensagem REPLY: conexão terminada pelo peer\n");
         free(msg);
         return 0;
     }
-
-    if(flag_d) printf("Mensagem enviada ao par a montante: %s\n", msg);
+    else
+    {
+        if(flag_d) printf("Mensagem enviada ao par a montante: %s\n", msg);
+    }
 
     free(msg);
     return 1;

@@ -6,6 +6,8 @@
 #include "queue.h"
 #include "iamroot.h"
 
+#define MAX_AUX_POPS 10
+
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
         queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue);
@@ -27,8 +29,12 @@ int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_
                       int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied);
 queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,
                       queue **redirect_queue_tail, int *empty_redirect_queue);
-queue *send_is_flowing(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
+queue *send_is_flowing_broken(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
                        queue *element, queue **redirect_queue_tail, queue *previous, int *empty_redirect_queue,
                        int remove_by_index);
+queue *send_broken_stream_to_all(int *fd_array, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,
+                                 int *empty_redirect_queue);
+queue *send_stream_flowing_to_all(int *fd_array, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,
+                                  int *empty_redirect_queue);
 
 #endif //RCI_INTERFACE_H
