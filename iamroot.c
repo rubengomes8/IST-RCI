@@ -7,7 +7,13 @@
 le se uma mensagem completa se houver (se nao houver vai se outra vez para o select)
 
 -> neste momento estamos a meter o TCP_receive a ler um valor gigante de 10000 bytes, não é de certeza a melhor implementação. ler 1 a 1 é boa ideia?
-****************************************************************************************************************************************************************************/
+
+-> o que se fazer quando se perde a ligação ao servidor fonte?
+
+-> o que acontece se não houver pops suficientes para dar. Ex: bestpops = 5. Tem apenas um filho que aceita tcp_sessions = 1
+ logo nunca vai receber 5 pops
+
+ ****************************************************************************************************************************************************************************/
 
 
 //Vamos precisar de as usar várias vezes, por isso defini como variáveis globais
@@ -160,7 +166,7 @@ int main(int argc, char *argv[])
                 get_root_access_server(rasaddr, rasport, msg, res_rs, fd_rs);
 
                 ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////////////
-                fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport);
+                fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 0);
 
                 while(welcome == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
                 {
@@ -404,7 +410,7 @@ void get_root_access_server(char *rasaddr, char *rasport, char *msg, struct addr
 
 //Pede e recebe do servidor de acessos um ponto de ligação à stream
 int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, int fd_rs, struct addrinfo *res_rs,
-                     char *pop_addr, char *pop_tport)
+                     char *pop_addr, char *pop_tport, int flag_readesao)
 {
     int fd_udp = -1;
     int counter = 0;
@@ -413,6 +419,15 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
     fd_udp = udp_socket(rasaddr, rasport, res_udp);
     if(fd_udp == -1)
     {
+        if(flag_readesao)
+        {
+            if(flag_d)
+            {
+                printf("Falha ao ligar-se ao servidor de acesso...\n");
+            }
+            freeaddrinfo(*res_udp);
+            return -1;
+        }
         if(flag_d)
         {
             printf("Falha ao ligar-se ao servidor de acesso...\n");
@@ -430,10 +445,18 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
         counter++;
         if(counter == MAX_TRIES)
         {
+            if(flag_readesao)
+            {
+                if(flag_d) printf("Impossível comunicar com o servidor de acessos, após %d tentativas...\n", MAX_TRIES);
+                close(fd_udp);
+                freeaddrinfo(*res_udp);
+                return -1;
+            }
             if(flag_d)
             {
                 printf("\n");
                 printf("Impossível comunicar com o servidor de acessos, após %d tentativas...\n", MAX_TRIES);
+
                 printf("A terminar o programa...\n");
             }
             if(fd_rs != -1) close(fd_rs);

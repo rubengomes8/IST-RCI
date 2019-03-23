@@ -21,5 +21,8 @@ void decreaseAvailableSessions(queue *element);
 //retorna a nova head e atualiza a tail
 queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port);
 queue *removeElementByIndex(queue *head, queue **tail, int index);
+queue *removeElement(queue *element, queue *head, queue **tail, queue *previous);
+queue *getElementByIndex(queue *head, int index);
+void setNext(queue *element, queue *next);
 
 #endif //RCI_QUEUE_H

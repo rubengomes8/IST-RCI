@@ -270,7 +270,7 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
 
     if(flag_d)
     {
-        printf("Mensagem recebida de um cliente iamroot: %s\n", msg);
+        printf("Mensagem recebida de um novo par: %s", msg);
     }
 
     if(strcmp(msg, "POPREQ\n") != 0)
@@ -279,21 +279,14 @@ void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
         return;
     }
 
-    //Chamar função para procurar pontos de ligação
-
     sprintf(msg2, "POPRESP %s %s:%s\n", streamID, ipaddr, tport);
-
-    if(flag_d)
-    {
-        printf("A comunicar com o novo cliente iamroot...\n");
-    }
 
     msg_len2 = strlen(msg2);
     udp_answer(fd_udp, msg2, msg_len2, 0, (struct sockaddr *)&addr, addrlen);
 
     if(flag_d)
     {
-        printf("Mensagem enviada ao novo cliente iamroot: %s\n", msg2);
+        printf("Mensagem enviada ao novo par: %s\n", msg2);
     }
 }
 
@@ -311,15 +304,10 @@ int welcome(int tcp_sessions, int *tcp_occupied, int fd_tcp_server, int *fd_arra
     i = new_connection(fd_tcp_server, fd_array, tcp_sessions);
     if (i == -1)
     {
-        if (flag_d) printf("Novo pedido de ligação recusado...\n");
+        if (flag_d) printf("Novo pedido de ligação recusado\n");
     }
     else
     {
-        if (flag_d)
-        {
-            printf("Pedido de ligação aceite...\n");
-            printf("A enviar uma mensagem WELCOME ao peer...\n");
-        }
         sprintf(buffer, "WE %s\n", streamID);
         ptr = buffer;
         tcp_send(strlen(ptr), ptr, fd_array[i]);
@@ -403,23 +391,24 @@ void redirect(int fd_tcp_server, char *ip, char *port)
     refuse_fd = tcp_accept(fd_tcp_server);
     if(refuse_fd == -1)
     {
-        if(flag_d) printf("Falha ao aceitar o novo peer...\n");
+        if(flag_d) printf("Falha ao aceitar o novo par\n");
     }
     else
     {
-        if(flag_b)
-        {
-            printf("A aplicação já não tem capacidade para aceitar novas ligações a jusante...\n");
-            printf("A redirecionar o peer...\n");
-        }
-        //Dar um endereço válido aqui
         sprintf(buffer, "RE %s:%s\n", ip, port);
         ptr = buffer;
-        tcp_send(strlen(ptr), ptr, refuse_fd);
-        if(flag_d)
+        if(tcp_send(strlen(ptr), ptr, refuse_fd) != 0)
         {
-            printf("Mensagem enviada ao peer: %s\n", ptr);
+            if(flag_d)
+            {
+                printf("Mensagem enviada ao par: %s\n", ptr);
+            }
         }
+        else
+        {
+            if(flag_d) printf("Falha na comunicação com o par\n");
+        }
+
     }
 }
 
@@ -492,15 +481,8 @@ int pop_query(int query_id, int bestpops, int fd)
     sprintf(buffer, "PQ %04X %d\n", query_id, bestpops);
 
     n = tcp_send(strlen(buffer), buffer, fd);
-    if(n == -1)
+    if(n == 0)
     {
-        if(flag_d) printf("Erro duranto o envio da mensagem POP_QUERY\n");
-        free(buffer);
-        return -1;
-    }
-    else if(n == 0)
-    {
-        if(flag_d) printf("Falha ao enviar a mensagem POP_QUERY: conexão terminada pelo peer\n");
         free(buffer);
         return 0;
     }
@@ -674,6 +656,8 @@ int send_tree_query(char *ip, char *tport, int fd)
         return 0;
     }
 
+
+
     free(msg);
     return 1;
 }
@@ -767,8 +751,9 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
 
     while(1)
     {
-        n = tcp_receive(TR_MAX_LEN, msg_aux, fd_son);
-         if(n == 0)
+        ptr = msg_aux;
+        n = tcp_receive(TR_MAX_LEN, ptr, fd_son);
+        if(n == 0)
         {
             return 10;
         }
@@ -778,8 +763,8 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
         }
         else
         {
-            strcat(msg, msg_aux);
-            if(strlen(msg_aux) == 1 && !strcpy(msg_aux, "\n"))
+            strcat(msg, ptr);
+            if(ptr[0] == '\n')
                 break;
         }
         
@@ -805,17 +790,15 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
 }
 
 
-int root_send_tree_query(queue *redirect_queue_head, int *fd_array)
+queue* root_send_tree_query(queue *redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *empty_redirect_queue,
+        int *tcp_occupied)
 {
     queue *aux = redirect_queue_head;
     char *msg = NULL;
-    char ipaddr[IP_LEN + 1];
-    char tport[PORT_LEN + 1];
+    char *ptr = NULL;
     int n;
     int index;
 
-    ipaddr[0] = '\0';
-    tport[0] = '\0';
 
     msg = (char *)malloc(sizeof(char)*TQ_LEN);
     if(msg == NULL)
@@ -827,30 +810,29 @@ int root_send_tree_query(queue *redirect_queue_head, int *fd_array)
 
     while(aux != NULL)
     {
-        strcpy(ipaddr,getIP(aux));
-        strcpy(tport, getPORT(aux));
-        sprintf(msg, "TQ %s:%s\n", ipaddr, tport);
+        sprintf(msg, "TQ %s:%s\n", getIP(aux), getPORT(aux));
         index = getIndex(aux);
-        n = tcp_send(strlen(msg), msg, fd_array[index]);
+        ptr = msg;
+        n = tcp_send(strlen(ptr), ptr, fd_array[index]);
         //Falta verificar o valor do retorno e fazer os ajustes necessários à lista caso se tenha detetado que um par se desconectou
-        if(n == -1)
+        if(n == 0)
         {
-            if(flag_d) printf("Erro duranto o envio da mensagem TREE_QUERY por parte da root\n");
             free(msg);
-            return -1;
+            if(flag_d) printf("Perdida a ligação ao par a jusante %s:%s\n", getIP(aux), getPORT(aux));
+            close(fd_array[index]);
+            fd_array[index] = -1;
+            (*tcp_occupied)--;
+            redirect_queue_head = removeElementByIndex(redirect_queue_head, redirect_queue_tail, index);
+            if(redirect_queue_head == NULL) *empty_redirect_queue = 1;
+            return redirect_queue_head;
         }
-        else if(n == 0)
-        {
-            if(flag_d) printf("Falha ao enviar a mensagem TREE_QUERY por parte da root: conexão terminada pelo peer\n");
-            //Temos de retirar o peer da lista de filhos acho eu
-
-            free(msg);
-            return 0;
-        }
+        if(flag_d) printf("Mensagem enviada ao par %s:%s: %s\n", getIP(aux), getPORT(aux), ptr);
         aux = getNext(aux);
     }
 
-    return 1;
+
+
+    return redirect_queue_head;
 }
 
 

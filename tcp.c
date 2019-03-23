@@ -68,15 +68,12 @@ int tcp_send(int nbytes, char *ptr, int fd)
   {
     //Envia o número de bytes que faltam. Recebe o número de bytes enviado com sucesso
     nwritten = write(fd, ptr, nleft);
-    if(nwritten < 0)
+    if(nwritten == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: tcp_send: write: %s\n", strerror(errno));
-        return -1;
-    }
-    else if(nwritten == 0)
-    {
         return 0; //conexão terminada pelo peer
     }
+
     nleft -= nwritten;
     ptr += nwritten; //incremento do ponteiro até ao primeiro caracter não enviado
   }
@@ -101,7 +98,7 @@ int tcp_receive(int nbytes, char *ptr, int fd)
         if(nread == -1)
         {
             if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));
-            return -1;
+            return 0;
         }
         else if(nread == 0)
         {

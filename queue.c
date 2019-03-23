@@ -150,7 +150,7 @@ queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port)
             }
 
             //Se aux for igual à head, o elemento a remover é o primeiro da fila
-            if(aux == head)
+            else if(aux == head)
             {
                 head = aux->next;
                 freeElement(aux);
@@ -159,9 +159,16 @@ queue *removeElementByAddress(queue *head, queue **tail, char *ip, char *port)
 
 
             //Se aux for igual à tail, o elemento a remover é o último da fila
-            if(aux == *tail)
+            else if(aux == *tail)
             {
                 *tail = aux2;
+                (*tail)->next = NULL;
+                freeElement(aux);
+                return head;
+            }
+            else
+            {
+                aux2->next = aux->next;
                 freeElement(aux);
                 return head;
             }
@@ -198,7 +205,7 @@ queue *removeElementByIndex(queue *head, queue **tail, int index)
             }
 
             //Se aux for igual à head, o elemento a remover é o primeiro da fila
-            if(aux == head)
+            else if(aux == head)
             {
                 head = aux->next;
                 freeElement(aux);
@@ -207,9 +214,16 @@ queue *removeElementByIndex(queue *head, queue **tail, int index)
 
 
             //Se aux for igual à tail, o elemento a remover é o último da fila
-            if(aux == *tail)
+            else if(aux == *tail)
             {
                 *tail = aux2;
+                (*tail)->next = NULL;
+                freeElement(aux);
+                return head;
+            }
+            else
+            {
+                aux2->next = aux->next;
                 freeElement(aux);
                 return head;
             }
@@ -223,4 +237,57 @@ queue *removeElementByIndex(queue *head, queue **tail, int index)
 
     //Senão encontrou nenhum igual retorna a head
     return head;
+}
+
+queue *removeElement(queue *element, queue *head, queue **tail, queue *previous)
+{
+    if(element == NULL) return NULL;
+
+    if(element == head && element == *tail)
+    {
+        freeElement(element);
+        return NULL;
+    }
+
+    else if(element == head)
+    {
+        head = element->next;
+        freeElement(element);
+        return head;
+    }
+
+    else if(element == *tail)
+    {
+        *tail = previous;
+        (*tail)->next = NULL;
+        freeElement(element);
+        return head;
+    }
+    else
+    {
+        previous->next = element->next;
+        freeElement(element);
+        return head;
+    }
+}
+
+queue *getElementByIndex(queue *head, int index)
+{
+    queue *aux = NULL;
+
+    aux = head;
+
+    while(aux != NULL)
+    {
+        if(getIndex(aux) == index) return aux;
+        aux = getNext(aux);
+    }
+
+    return NULL;
+}
+
+void setNext(queue *element, queue *next)
+{
+    if(element == NULL)return;
+    element->next = next;
 }

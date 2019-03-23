@@ -19,6 +19,16 @@ queue *receive_newpop(queue *redirect_queue_head, queue **redirect_queue_tail, i
 queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpops, queue *redirect_queue_head, queue **redirect_queue_tail);
 queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
         int *received_pops, int waiting_pop_reply);
-
+int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
+             queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
+             int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
+             char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux);
+int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_queue_head, queue **redirect_queue_tail,
+                      int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied);
+queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,
+                      queue **redirect_queue_tail, int *empty_redirect_queue);
+queue *send_is_flowing(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
+                       queue *element, queue **redirect_queue_tail, queue *previous, int *empty_redirect_queue,
+                       int remove_by_index);
 
 #endif //RCI_INTERFACE_H

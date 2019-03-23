@@ -24,20 +24,16 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int n;
     int query_id = 0;
 
-    char tree_structure[MAX_BYTES];
-
-    //Variáveis para lista de apps iamroot ligadas imadiatamente a jusante
-    //Vão formar uma lista utilizada para redirects
-    /*struct _queue* redirect_queue_head = NULL;
-    struct _queue* redirect_queue_tail = NULL;
-    struct _queue* redirect_aux = NULL;
-    int empty_redirect_queue = 1; //indica que a queue está vazia quando é igual a 1*/
-
 
     //Queue de pops. A raiz nunca faz parte da lista
     struct _queue *pops_queue_head = NULL;
     struct _queue *pops_queue_tail = NULL;
     int empty_pops_queue = 1;
+
+    struct _queue *aux_pops_queue_head = NULL;
+    struct _queue *aux_pops_queue_tail = NULL;
+    struct _queue *aux_pops_queue_aux = NULL;
+    int empty_aux_pops_queue = 1;
 
 
     char msg[MAX_BYTES]; msg[0] = '\0';
@@ -53,7 +49,10 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     char *data = NULL;
     char buffer_data[BUFFER_SIZE];
     int data_len;
-    char data_header[DATA_HEADER_LEN];
+
+    //ler dos pares tcp a jusante
+    queue *aux = NULL;
+    queue *previous = NULL;
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -73,7 +72,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         //Verifica se flag_tree está ativa e se estiver envia TREE_QUERY a todos os filhos
         if(flag_tree)
         {
-            n = root_send_tree_query(redirect_queue_head, fd_array);
+            redirect_queue_head = root_send_tree_query(redirect_queue_head, &redirect_queue_tail, fd_array,
+                    &empty_redirect_queue, &tcp_occupied);
         }
 
 
@@ -85,95 +85,27 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             return;
         }
 
-        if(FD_ISSET(fd_ss, &fd_read_set)) //Servidor fonte
+        //Servidor fonto
+        if(FD_ISSET(fd_ss, &fd_read_set))
         {
-
-
             data = buffer_data;
-            n = read(fd_ss, data, BUFFER_SIZE - 1);
-            //n = tcp_receive(BUFFER_SIZE -1, data, fd_ss);
-            if(n == 0)
+            n = receive_data_root(data, fd_ss, tcp_sessions, &redirect_queue_head, &redirect_queue_tail,
+                    &empty_redirect_queue, &is_flowing, fd_array, &tcp_occupied);
+            if(n != 0)
             {
-                //Mandar broken stream em caso de perda de ligação
-                if(flag_d) printf("Perdida a ligação ao servidor fonte\n");
-                is_flowing = 0;
-                for(i=0; i<tcp_sessions; i++)
-                {
-                    if(fd_array[i] != -1)
-                    {
-                        n = broken_stream(fd_array[i]);
-                        if(n == 0)
-                        {
-                            //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                            if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                            close(fd_array[i]);
-                            fd_array[i] = -1;
-                            tcp_occupied--;
-                            redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                            if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                        }
-                        else if(n == -1)
-                        {
-                            if (flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                        }
-                    }
-                }
-            }
-            else if(n == -1)
-            {
-                if(flag_d) printf("Erro a receber informação do servidor fonte!\n");
-            }
-            else
-            {
+                //Imprime os dados recebidos
                 data[n] = '\0';
+                data_len = n;
                 if(flag_b) printf("%s", data);
                 fflush(stdout);
 
-                data_len = n;
-
-                for(i=0; i<tcp_sessions; i++)
-                {
-                    if(fd_array[i] != -1)
-                    {
-                        sprintf(data_header, "DA %04X\n", data_len);
-                        ptr = data_header;
-                        n = tcp_send(strlen(data_header), ptr, fd_array[i]);
-                        if(n == 0)
-                        {
-                            //Perdeu-se a ligação ao par a jusante, tentar entrar de novo
-                            if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                            close(fd_array[i]);
-                            fd_array[i] = -1;
-                            tcp_occupied--;
-                            redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                            if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                        }
-                        else if(n == -1)
-                        {
-                            if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                        }
-
-                        n = tcp_send(data_len, data, fd_array[i]);
-                        if(n == 0)
-                        {
-                            //Perdeu-se a ligação ao par a jusante, tentar entrar de novo
-                            if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                            close(fd_array[i]);
-                            fd_array[i] = -1;
-                            tcp_occupied--;
-                            redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                            if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                        }
-                        else if(n == -1)
-                        {
-                            if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                        }
-                    }
-                }
+                //Envia os dados aos pares a jusante. Recebe como retorno a head de lista de redirects
+                redirect_queue_head = send_data_root(data, data_len, tcp_sessions, fd_array, &tcp_occupied,
+                        redirect_queue_head, &redirect_queue_tail, &empty_redirect_queue);
             }
         }
 
-        //Lê algo dos pares TCP a jusante
+        //Pares a jusante
         for(i = 0; i<tcp_sessions; i++)
         {
             if(fd_array[i] != -1)
@@ -182,20 +114,17 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                 {
                     ptr = msg;
                     n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
+                    aux = getElementByIndex(redirect_queue_head, i);
 
                     if(n == 0)
                     {
                         //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                        if(flag_d) printf("Perdida a ligação ao par a jusante %s:%s\n\n", getIP(aux), getPORT(aux));
                         close(fd_array[i]);
                         fd_array[i] = -1;
                         tcp_occupied--;
                         redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
                         if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                    }
-                    else if(n == -1)
-                    {
-                        if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
                     }
                     else
                     {
@@ -209,53 +138,43 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         strncpy(buffer, msg, 2);
                         buffer[2] = '\0';
 
-                        if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
-
                         //NEW_POP
                         if(!strcmp("NP", buffer))
                         {
                             redirect_queue_head = receive_newpop(redirect_queue_head, &redirect_queue_tail, i, fd_array,
                                     &empty_redirect_queue, ptr);
+                            aux = getElementByIndex(redirect_queue_head, i);
+                            if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
 
-                            //Depois de receber o NEW_POP manda um SF
-                            if(is_flowing)
-                            {
-                                n = stream_flowing(fd_array[i]);
-                                if(n == 0)
-                                {
-                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                    close(fd_array[i]);
-                                    fd_array[i] = -1;
-                                    tcp_occupied--;
-                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                }
-                                else if(n == -1)
-                                {
-                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                }
-                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                            }
+                            //Depois de receber o NP, envia um SF
+                            redirect_queue_head = send_is_flowing(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
+                                                                  &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
+
                         }
-                        //recebeu um POP_REPLY
                         if(!strcmp("PR", buffer))
                         {
-
+                            if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), ptr);
                             pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, ptr, &empty_pops_queue,
                                     query_id, &received_pops, waiting_pop_reply);
+                            //Liberta a lista de pops auxiliares, pois esta já não é precisa
+
+
                             if(received_pops >= bestpops)
                             {
                                 waiting_pop_reply = 0;
                                 received_pops = 0;
+                                freeQueue(aux_pops_queue_head);
+                                aux_pops_queue_aux = NULL;
+                                aux_pops_queue_head = NULL;
+                                aux_pops_queue_tail = NULL;
+                                empty_aux_pops_queue = 1;
                             }
                         }
-                        //recebeu um TREE_REPLY
                         else if(!strcmp("TR", buffer))
                         {
-                            if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
+                            if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), ptr);
                             //Receber o tree reply
-                            //Vai receber de um filho e vai 
+                            //Vai receber de um filho e vai
 
 
                         }
@@ -323,13 +242,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             else
             {
                 //Se não estiver à espera de um pop_reply
+                //&&received_pops == 0
                 if(waiting_pop_reply == 0)
                 {
                     //se não tiver nenhum elemento na lista de pops
                     if(empty_pops_queue)
                     {
                         //faz pop_query
-                        query_id++; //prinft("query_id: %d", query_id);
+                        query_id++;
                         redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
                                                               &redirect_queue_tail);
                         //está à espera da resposta do pop_query
@@ -347,6 +267,20 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 fd_array[i] = -1;
                             }
                         }
+
+
+                        //Para não causar atrasos, recorre à lista auxiliar de pops, caso esta não esteja vazia e
+                        //dá um desses pops
+                        if(empty_aux_pops_queue == 0)
+                        {
+                            //Lista "circular" como para o redirect
+                            if(aux_pops_queue_aux == NULL)
+                            {
+                                aux_pops_queue_aux = aux_pops_queue_head;
+                            }
+                            popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
+                            aux_pops_queue_aux = getNext(aux_pops_queue_aux);
+                        }
                     }
                     else
                     {
@@ -355,14 +289,17 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         decreaseAvailableSessions(pops_queue_head);
                         if(getAvailableSessions(pops_queue_head) == 0)
                         {
-                            //Se o pop que foi indicado deixar de ter ligações, removê-lo da lista
-                            pops_queue_head = removeElementByAddress(pops_queue_head, &pops_queue_tail, getIP(pops_queue_head),
-                                                                     getPORT(pops_queue_head));
-
-                            if(pops_queue_head == NULL)
+                            //remover da lista de pops e passar para a lista de aux_pops
+                            if(pops_queue_head == pops_queue_tail)
                             {
-                                //Se a lista de pops ficar vazia, fazer pop_query
+                                //só tinha um elemento e vai ficar vazia
+                                aux_pops_queue_head = pops_queue_head;
+                                aux_pops_queue_tail = aux_pops_queue_head;
+                                empty_aux_pops_queue = 0;
+                                pops_queue_head = NULL;
+                                pops_queue_tail = NULL;
                                 empty_pops_queue = 1;
+
                                 query_id++;
                                 redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
                                         redirect_queue_head, &redirect_queue_tail);
@@ -371,7 +308,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
                                 if(redirect_queue_head == NULL)
                                 {
-                                    //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                                    //Se a a cabeça da lista de elementos diretamente a jusante for NULL,
+                                    // a lista ficou vazia
                                     empty_redirect_queue = 1;
                                     tcp_occupied = 0;
                                     for(i = 0; i<tcp_sessions; i++)
@@ -381,7 +319,42 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     }
                                 }
                             }
+                            else
+                            {
+                                if(empty_aux_pops_queue)
+                                {
+                                    //Se a lista auxiliar de pops estiver vazia, cria a lista
+                                    aux_pops_queue_head = pops_queue_head;
+                                    aux_pops_queue_tail = aux_pops_queue_head;
+                                    pops_queue_head = getNext(pops_queue_head);
+                                    setNext(aux_pops_queue_head, NULL);
+                                    empty_aux_pops_queue = 0;
+                                }
+                                else
+                                {
+                                    //Se não estiver vazia, insere na tail
+                                    setNext(aux_pops_queue_tail, pops_queue_head);
+                                    aux_pops_queue_tail = pops_queue_head;
+                                    pops_queue_head = getNext(pops_queue_head);
+                                    setNext(pops_queue_head, NULL);
+                                }
+                            }
                         }
+                    }
+                }
+                else
+                {
+                    //Para não causar atrasos, recorre à lista auxiliar de pops, caso esta não esteja vazia e
+                    //dá um desses pops
+                    if(empty_aux_pops_queue == 0)
+                    {
+                        //Lista "circular" como para o redirect
+                        if(aux_pops_queue_aux == NULL)
+                        {
+                            aux_pops_queue_aux = aux_pops_queue_head;
+                        }
+                        popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
+                        aux_pops_queue_aux = getNext(aux_pops_queue_aux);
                     }
                 }
             }
@@ -396,6 +369,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             {
                 freeQueue(redirect_queue_head);
                 freeQueue(pops_queue_head);
+                freeQueue(aux_pops_queue_head);
                 return;
             }
         }
@@ -439,20 +413,9 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
     char treequery_port[PORT_LEN +1];
     int validate_treequery = -1;
 
-    //Variáveis para readesão
-    struct addrinfo *res_udp = NULL;
-    int fd_udp = -1;
-    int welcome_flag = 0;
-    char rasaddr[IP_LEN + 1];
-    char rasport[PORT_LEN + 1];
-    int fd_ss = -1;
-    char *msg_readesao = NULL;
-    char buffer_readesao[BUFFER_SIZE];
-
     //Dados
     char *data = NULL;
     char *data_ptr = NULL;
-    char *token = NULL;
     int data_len;
 
 
@@ -483,6 +446,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
             if(flag_d) printf("Novo pedido de conexão...\n");
             if(tcp_sessions > tcp_occupied)
             {
+                //retorna o índice do novo fd em fd_array
                 i = welcome(tcp_sessions, &tcp_occupied, fd_tcp_server, fd_array, streamID);
             }
             else if(tcp_sessions == tcp_occupied)
@@ -510,7 +474,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                     if(n == 0)
                     {
                         //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n\n", i);
                         close(fd_array[i]);
                         fd_array[i] = -1;
                         tcp_occupied--;
@@ -615,6 +579,14 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
                                 if(redirect_queue_head == NULL) empty_redirect_queue = 1;
                             }
+                            else if(n == 0)
+                            {
+
+                                n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                             fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                if(n == 1) return;
+                            }
                         }
                     }
                     ptr = NULL;
@@ -663,129 +635,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                     }
                 }
 
-
-
-                /////////////////////////////// Aderir novamente à stream //////////////////////////////////
-                msg_readesao = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
-
-                if(!strcmp(msg_readesao, "ERROR"))
-                {
-                    freeQueue(redirect_queue_head);
-                    return;
-                }
-                else
-                {
-                    strncpy(buffer_readesao, msg_readesao, 6);
-                    buffer_readesao[6] = '\0';
-
-                    if(!strcmp(buffer_readesao, "URROOT"))
-                    {
-                        if(msg_readesao != NULL) free(msg_readesao);
-                        //A aplicação fica registada como sendo a raiz da nova árvore de escoamento
-                        *is_root = 1;
-
-                        //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
-                        fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT);
-
-                        ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
-                        fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
-
-
-                        //Informar do restabelecimento da stream
-                        for(i = 0; i<tcp_sessions; i++)
-                        {
-                            if(fd_array[i] != -1)
-                            {
-                                n = stream_flowing(fd_array[i]);
-
-                                if(n == 0)
-                                {
-                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                    close(fd_array[i]);
-                                    fd_array[i] = -1;
-                                    tcp_occupied--;
-                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                }
-                                else if(n == -1)
-                                {
-                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                }
-                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                            }
-                        }
-
-
-                        //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
-                        interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                                       fd_udp, fd_tcp_server, fd_array, bestpops, redirect_queue_head, redirect_queue_tail,
-                                       redirect_aux, empty_redirect_queue);
-                        return; //Se ele sair da inferface_root é porque o programa foi terminado
-
-                    }
-                    else if(!strcmp(buffer_readesao, "ROOTIS"))
-                    {
-                        //Obtém o IP e o porto do servidor de acesso
-                        get_root_access_server(rasaddr, rasport, msg_readesao, res_rs, fd_rs);
-
-                        fd_pop = -1;
-                        while(fd_pop == -1)
-                        {
-                            ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////
-                            fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport);
-
-                            welcome_flag = 0;
-                            while(welcome_flag == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
-                            {
-                                //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
-                                fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, 1);
-                                if(fd_pop == -1)
-                                {
-                                    close(fd_udp);
-                                    fd_udp = -1;
-                                    welcome_flag = 1;
-                                }
-                                else
-                                {
-                                    //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
-                                    welcome_flag = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, fd_pop, streamID);
-                                }
-                            }
-                        }
-                        welcome_flag = 0;
-                        close(fd_udp);
-                        fd_udp = -1;
-
-
-                        //Informar do restabelecimento da stream
-                        for(i = 0; i<tcp_sessions; i++)
-                        {
-                            if(fd_array[i] != -1)
-                            {
-                                n = stream_flowing(fd_array[i]);
-
-                                if(n == 0)
-                                {
-                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                    close(fd_array[i]);
-                                    fd_array[i] = -1;
-                                    tcp_occupied--;
-                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                }
-                                else if(n == -1)
-                                {
-                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                }
-                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                            }
-                        }
-                    }
-                }
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+                n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                             fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                if(n == 1) return;
             }
             else if(n == -1)
             {
@@ -806,7 +659,6 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                 if(!strcmp("DA", buffer))
                 {
-                    if(flag_d) printf("%s\n", buffer);
                     //Recebe o header da mensagem
                     n = receive_data_header(&data_len, msg);
                     if(n == -1)
@@ -825,7 +677,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                         data_ptr = data;
                         n = read(fd_pop, data, data_len);
-                        if(n == 0)
+                        if(n == 0 || n == -1)
                         {
                             //Mandar broken stream em caso de perda de ligação
                             if(flag_d) printf("Perdida a ligação ao par a montante\n");
@@ -851,6 +703,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                     }
                                 }
                             }
+
+
+                            n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                         fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                         pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                            if(n == 1) return;
                         }
                         else if(n == -1)
                         {
@@ -881,10 +739,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         tcp_occupied--;
                                         redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
                                         if(redirect_queue_head == NULL) empty_redirect_queue = 1;
+                                        continue;
                                     }
                                     else if(n == -1)
                                     {
                                         if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                                        continue;
                                     }
                                     if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: %s\n", i, msg);
 
@@ -899,10 +759,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         tcp_occupied--;
                                         redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
                                         if(redirect_queue_head == NULL) empty_redirect_queue = 1;
+                                        continue;
                                     }
                                     else if(n == -1)
                                     {
                                         if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                                        continue;
                                     }
                                     if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: %s\n", i, data_ptr);
                                 }
@@ -1023,132 +885,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                     }
                                 }
 
-
-                                /////////////////////////////// Aderir novamente à stream //////////////////////////////////
-                                msg_readesao = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
-
-                                if(!strcmp(msg_readesao, "ERROR"))
-                                {
-                                    freeQueue(redirect_queue_head);
-                                    return;
-                                }
-                                else
-                                {
-                                    strncpy(buffer_readesao, msg_readesao, 6);
-                                    buffer_readesao[6] = '\0';
-
-                                    if(!strcmp(buffer_readesao, "URROOT"))
-                                    {
-                                        if(msg_readesao != NULL) free(msg_readesao);
-                                        //A aplicação fica registada como sendo a raiz da nova árvore de escoamento
-                                        *is_root = 1;
-
-                                        //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
-                                        fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT);
-
-                                        ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
-                                        fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
-
-
-                                        //Informar do restabelecimento da stream
-                                        is_flowing = 1;
-                                        for(i = 0; i<tcp_sessions; i++)
-                                        {
-                                            if(fd_array[i] != -1)
-                                            {
-                                                n = stream_flowing(fd_array[i]);
-
-                                                if(n == 0)
-                                                {
-                                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                                    close(fd_array[i]);
-                                                    fd_array[i] = -1;
-                                                    tcp_occupied--;
-                                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                                }
-                                                else if(n == -1)
-                                                {
-                                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                                }
-                                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                                            }
-                                        }
-
-
-                                        //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
-                                        interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                                                       fd_udp, fd_tcp_server, fd_array, bestpops, redirect_queue_head, redirect_queue_tail,
-                                                       redirect_aux, empty_redirect_queue);
-                                        return; //Se ele sair da inferface_root é porque o programa foi terminado
-
-                                    }
-                                    else if(!strcmp(buffer_readesao, "ROOTIS"))
-                                    {
-                                        //Obtém o IP e o porto do servidor de acesso
-                                        get_root_access_server(rasaddr, rasport, msg_readesao, res_rs, fd_rs);
-
-                                        fd_pop = -1;
-                                        while(fd_pop == -1)
-                                        {
-                                            ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////
-                                            fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport);
-
-                                            welcome_flag = 0;
-                                            while(welcome_flag == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
-                                            {
-                                                //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
-                                                fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, 1);
-                                                if(fd_pop == -1)
-                                                {
-                                                    close(fd_udp);
-                                                    fd_udp = -1;
-                                                    welcome_flag = 1;
-                                                }
-                                                else
-                                                {
-                                                    //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
-                                                    welcome_flag = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, fd_pop, streamID);
-                                                }
-                                            }
-                                        }
-
-                                        welcome_flag = 0;
-                                        close(fd_udp);
-                                        fd_udp = -1;
-
-                                        //Informar do restabelecimento da stream
-                                        is_flowing = 1;
-                                        for(i = 0; i<tcp_sessions; i++)
-                                        {
-                                            if(fd_array[i] != -1)
-                                            {
-                                                n = stream_flowing(fd_array[i]);
-
-                                                if(n == 0)
-                                                {
-                                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                                    close(fd_array[i]);
-                                                    fd_array[i] = -1;
-                                                    tcp_occupied--;
-                                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                                }
-                                                else if(n == -1)
-                                                {
-                                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                                }
-                                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                                            }
-                                        }
-                                    }
-                                }
-                                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+                                n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                             fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                if(n == 1) return;
                             }
                             else if(n == -1)
                             {
@@ -1194,132 +934,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                     }
                                 }
 
-
-                                /////////////////////////////// Aderir novamente à stream //////////////////////////////////
-                                msg_readesao = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
-
-                                if(!strcmp(msg_readesao, "ERROR"))
-                                {
-                                    freeQueue(redirect_queue_head);
-                                    return;
-                                }
-                                else
-                                {
-                                    strncpy(buffer_readesao, msg_readesao, 6);
-                                    buffer_readesao[6] = '\0';
-
-                                    if(!strcmp(buffer_readesao, "URROOT"))
-                                    {
-                                        if(msg_readesao != NULL) free(msg_readesao);
-                                        //A aplicação fica registada como sendo a raiz da nova árvore de escoamento
-                                        *is_root = 1;
-
-                                        //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
-                                        fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT);
-
-                                        ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
-                                        fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
-
-
-                                        //Informar do restabelecimento da stream
-                                        is_flowing = 1;
-                                        for(i = 0; i<tcp_sessions; i++)
-                                        {
-                                            if(fd_array[i] != -1)
-                                            {
-                                                n = stream_flowing(fd_array[i]);
-
-                                                if(n == 0)
-                                                {
-                                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                                    close(fd_array[i]);
-                                                    fd_array[i] = -1;
-                                                    tcp_occupied--;
-                                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                                }
-                                                else if(n == -1)
-                                                {
-                                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                                }
-                                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                                            }
-                                        }
-
-
-
-                                        //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
-                                        interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                                                       fd_udp, fd_tcp_server, fd_array, bestpops, redirect_queue_head, redirect_queue_tail,
-                                                       redirect_aux, empty_redirect_queue);
-                                        return; //Se ele sair da inferface_root é porque o programa foi terminado
-
-                                    }
-                                    else if(!strcmp(buffer_readesao, "ROOTIS"))
-                                    {
-                                        //Obtém o IP e o porto do servidor de acesso
-                                        get_root_access_server(rasaddr, rasport, msg_readesao, res_rs, fd_rs);
-
-                                        fd_pop = -1;
-                                        while(fd_pop == -1)
-                                        {
-                                            ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////
-                                            fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport);
-
-                                            welcome_flag = 0;
-                                            while(welcome_flag == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
-                                            {
-                                                //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
-                                                fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, 1);
-                                                if(fd_pop == -1)
-                                                {
-                                                    close(fd_udp);
-                                                    fd_udp = -1;
-                                                    welcome_flag = 1;
-                                                }
-                                                else
-                                                {
-                                                    //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
-                                                    welcome_flag = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, fd_pop, streamID);
-                                                }
-                                            }
-                                        }
-                                        welcome_flag = 0;
-                                        close(fd_udp);
-                                        fd_udp = -1;
-
-                                        //Informar do restabelecimento da stream
-                                        is_flowing = 1;
-                                        for(i = 0; i<tcp_sessions; i++)
-                                        {
-                                            if(fd_array[i] != -1)
-                                            {
-                                                n = stream_flowing(fd_array[i]);
-
-                                                if(n == 0)
-                                                {
-                                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
-                                                    if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
-                                                    close(fd_array[i]);
-                                                    fd_array[i] = -1;
-                                                    tcp_occupied--;
-                                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
-                                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
-                                                }
-                                                else if(n == -1)
-                                                {
-                                                    if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
-                                                }
-                                                if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
-                                            }
-                                        }
-                                    }
-                                }
-                                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+                                n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                             fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                if(n == 1) return;
                             }
                             else if(n == -1)
                             {
@@ -1363,19 +981,41 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                     if(validate_treequery == 0) //O ip e o porto de destino forem o desta iamroot
                     {
                         //Responder com um TREE_REPLY com capacidade e ocupação do ponto de acesso
-                        send_tree_reply(treequery_ip, treequery_port, tcp_sessions, tcp_occupied, redirect_queue_head,redirect_queue_tail, fd_pop);
+                        n = send_tree_reply(treequery_ip, treequery_port, tcp_sessions, tcp_occupied, redirect_queue_head, redirect_queue_tail, fd_pop);
+                        if(n == 0)
+                        {
+                            n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                    fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                    pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                            if(n == 1) return;
+                        }
+
+
 
                     }
                     else //Caso contrário deverá replicar a mensagem a jusante a menos que não tenha pares a jusante
                     {
                         //Percorrer a lista redirect e enviar para cada um deles a mesma mensagem -> send_tree_query
-                        redirect_aux = redirect_queue_head;
-                        while(redirect_aux != NULL)
+
+                        for(i = 0; i<tcp_sessions; i++)
                         {
-                            send_tree_query(getIP(redirect_aux), getPORT(redirect_aux), fd_tcp_server);
-                            
-                            redirect_aux = getNext(redirect_aux);
+                            if(fd_array[i] != -1)
+                            {
+                                n = send_tree_query(treequery_ip, treequery_port, fd_array[i]);
+
+                                if(n == 0)
+                                {
+                                    //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                                    close(fd_array[i]);
+                                    fd_array[i] = -1;
+                                    tcp_occupied--;
+                                    redirect_queue_head = removeElementByIndex(redirect_queue_head, &redirect_queue_tail, i);
+                                    if(redirect_queue_head == NULL) empty_redirect_queue = 1;
+                                    if(flag_d) printf("Mensagem envaida ao par a jusante com índice %d: %s\n", i, msg);
+                                }
+                            }
                         }
+
                     }
                 }
             }
@@ -1501,12 +1141,20 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
         printf("Debug off\n");
         flag_d = 0;
     }
-    else if(!strcasecmp(buffer, "tree\n") && is_root)
+    else if(!strcasecmp(buffer, "tree\n"))
     {
-        //Apresentar estrutura da transmissão
-        printf("Estrutura de transmissão em árvore\n");
-        //meter flag global a 1 e na interface_root se tiver flag ativa chamar função q envia tree query aos filhos
-        flag_tree = 1;
+        if(is_root)
+        {
+            //Apresentar estrutura da transmissão
+            printf("Estrutura de transmissão em árvore\n");
+            //meter flag global a 1 e na interface_root se tiver flag ativa chamar função q envia tree query aos filhos
+            flag_tree = 1;
+        }
+        else
+        {
+            printf("O comando tree apenas funciona para a raíz\n");
+        }
+
     }
     else if(!strcasecmp(buffer, "exit\n"))
     {
@@ -1528,14 +1176,21 @@ queue *receive_newpop(queue *redirect_queue_head, queue **redirect_queue_tail, i
     char port_aux[PORT_LEN + 1]; port_aux[0] = '\0';
 
     token = strtok(msg, " ");
-    token = strtok(NULL, ":");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Mensagem New Pop inválida\n");
+        return redirect_queue_head;
+    }
+    token = NULL;
 
+    token = strtok(NULL, ":");
     if (token == NULL)
     {
         if (flag_d) printf("Endereço IP inválido\n");
         return redirect_queue_head;
     }
     strcpy(ip_aux, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
     if (token == NULL)
@@ -1544,6 +1199,7 @@ queue *receive_newpop(queue *redirect_queue_head, queue **redirect_queue_tail, i
         return redirect_queue_head;
     }
     strcpy(port_aux, token);
+    token = NULL;
 
     if (*empty_queue == 0)
     {
@@ -1567,36 +1223,28 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
 {
     int i;
     int n;
+    queue *previous = NULL, *aux = NULL;
 
-    for(i = 0; i<tcp_sessions; i++)
+    aux = redirect_queue_head;
+    while(aux != NULL)
     {
-        if(fd_array[i] != -1)
-        {
-            n = pop_query(query_id, bestpops, fd_array[i]);
+        i = getIndex(aux);
 
-            //Ligação perdida
-            //Fecha o fd, coloca -1 no vetor e fd a jusante e remove a entrada da fila de pares a jusante
-            if(n == -1)
-            {
-                if(flag_d) printf("Falha na comunicação com um dos peers...\n");
-            }
-            else if(n == 0)
-            {
-                if(flag_d) printf("Ligação a um dos peers perdida...\n");
-                close(fd_array[i]);
-                fd_array[i] = -1;
-                redirect_queue_head = removeElementByIndex(redirect_queue_head, redirect_queue_tail, i);
-            }
-            else if(n == 1)
-            {
-                if(flag_d) printf("Mensagem enviada ao par com índice %d: PQ %X %d\n", i, query_id, bestpops);
-            }
-        }
-        else if(fd_array[i] == -1)
+        n = pop_query(query_id, bestpops, fd_array[i]);
+        if(n == 0)
         {
-            //Em princípio nunca vai chegar aqui
-            if(flag_d) printf("Erro, pares todos ocupados mas um deles não tem fd\n");
+            if(flag_d) printf("Perdida a ligação ao par %s:%s\n\n", getIP(aux), getPORT(aux));
+            close(fd_array[i]);
+            fd_array[i] = -1;
+            redirect_queue_head = removeElement(aux, redirect_queue_head, redirect_queue_tail, previous);
         }
+        else if(n == 1)
+        {
+            if(flag_d) printf("Mensagem enviada ao par %s:%s: PQ %04X %d\n\n", getIP(aux), getPORT(aux), query_id, bestpops);
+        }
+
+        previous = aux;
+        aux = getNext(aux);
     }
 
     return redirect_queue_head;
@@ -1614,11 +1262,11 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
 
     if(waiting_pop_reply)
     {
-        *received_pops += available_sessions;
-
         //Se o query id recebido na mensagem do POP REPLY fôr igual ao queryid atual
         if(query_id_rcvd == query_id)
         {
+            *received_pops += available_sessions;
+
 
             if(*empty_pops_queue)
             {
@@ -1634,12 +1282,296 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
     }
     else
     {
-        if(flag_d) printf("Pop reply descartada, pois já foram recebidas todas as pedidas!\n");
+        if(flag_d) printf("Pop reply descartada, pois já foram recebidas todas as pedidas!\n\n");
     }
 
 
     return pops_queue_head;   
 }
+
+//retorna 1 se for para acabar o programa. caso em que passou a ser raiz e depois saiu
+//retorna 0 se for para continuar. caso em que nunca chegou a ser raiz
+int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
+        queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
+        int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
+        char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux)
+{
+    //Variáveis para readesão
+    struct addrinfo *res_udp = NULL;
+    int fd_udp = -1;
+    int welcome_flag = 0;
+    char rasaddr[IP_LEN + 1];
+    char rasport[PORT_LEN + 1];
+    int fd_ss = -1;
+    char *msg_readesao = NULL;
+    char buffer_readesao[BUFFER_SIZE];
+    int i;
+    int n;
+
+
+    /////////////////////////////// Aderir novamente à stream //////////////////////////////////
+    msg_readesao = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
+
+    if(!strcmp(msg_readesao, "ERROR"))
+    {
+        freeQueue(*redirect_queue_head);
+        return 1;
+    }
+    else
+    {
+        strncpy(buffer_readesao, msg_readesao, 6);
+        buffer_readesao[6] = '\0';
+
+        if(!strcmp(buffer_readesao, "URROOT"))
+        {
+            if(msg_readesao != NULL) free(msg_readesao);
+            //A aplicação fica registada como sendo a raiz da nova árvore de escoamento
+            *is_root = 1;
+
+            //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
+            fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT);
+
+            ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
+            fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
+
+
+            //Informar do restabelecimento da stream
+            for(i = 0; i<tcp_sessions; i++)
+            {
+                if(fd_array[i] != -1)
+                {
+                    n = stream_flowing(fd_array[i]);
+
+                    if(n == 0)
+                    {
+                        //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                        close(fd_array[i]);
+                        fd_array[i] = -1;
+                        (*tcp_occupied)--;
+                        *redirect_queue_head = removeElementByIndex(*redirect_queue_head, redirect_queue_tail, i);
+                        if(*redirect_queue_head == NULL) *empty_redirect_queue = 1;
+                    }
+                    else if(n == -1)
+                    {
+                        if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                    }
+                    if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
+                }
+            }
+
+
+            //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
+            interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
+                           fd_udp, fd_tcp_server, fd_array, bestpops, *redirect_queue_head, *redirect_queue_tail,
+                           redirect_aux, *empty_redirect_queue);
+            return 1; //Se ele sair da inferface_root é porque o programa foi terminado
+
+        }
+        else if(!strcmp(buffer_readesao, "ROOTIS"))
+        {
+            //Obtém o IP e o porto do servidor de acesso
+            get_root_access_server(rasaddr, rasport, msg_readesao, res_rs, fd_rs);
+
+            *fd_pop = -1;
+            while(*fd_pop == -1)
+            {
+                ///////////// 1. Solicita ao servidor de acesso da raíz o IP e porto TCP do ponto de acesso ////
+                fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 1);
+                if(fd_udp == -1)
+                {
+                    //falha na comunicação com o servidor de acessos. Podes significar que a raiz saiu
+                    //Vamos tentar uma nova readesão
+                    readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
+                            fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
+                            fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                    return 1;
+                }
+
+                welcome_flag = 0;
+                while(welcome_flag == 0) //Enquanto não tiver recebido um WELCOME com a stream esperada
+                {
+                    //////////////////////// 2. Estabelece sessão TCP com o ponto de acesso ///////////////////////////
+                    *fd_pop = connect_to_peer(pop_addr, pop_tport, fd_rs, fd_udp, res_rs, 1);
+                    if(*fd_pop == -1)
+                    {
+                        close(fd_udp);
+                        fd_udp = -1;
+                        welcome_flag = 1;
+                    }
+                    else
+                    {
+                        //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
+                        welcome_flag = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, *fd_pop, streamID);
+                    }
+                }
+            }
+            welcome_flag = 0;
+            close(fd_udp);
+            fd_udp = -1;
+
+
+            //Informar do restabelecimento da stream
+            for(i = 0; i<tcp_sessions; i++)
+            {
+                if(fd_array[i] != -1)
+                {
+                    n = stream_flowing(fd_array[i]);
+
+                    if(n == 0)
+                    {
+                        //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                        if(flag_d) printf("Perdida a ligação ao par a jusante com índice %d...\n", i);
+                        close(fd_array[i]);
+                        fd_array[i] = -1;
+                        tcp_occupied--;
+                        *redirect_queue_head = removeElementByIndex(*redirect_queue_head, redirect_queue_tail, i);
+                        if(*redirect_queue_head == NULL) *empty_redirect_queue = 1;
+                    }
+                    else if(n == -1)
+                    {
+                        if(flag_d) printf("Falha ao comunicar com o peer a jusante com índice %d...\n", i);
+                    }
+                    if(flag_d) printf("Mensagem enviada ao para a jusante com índice %d: SF\n", i);
+                }
+            }
+        }
+    }
+    return 0;
+
+}
+
+//retorna 0 em caso de falha
+int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_queue_head, queue **redirect_queue_tail,
+        int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied)
+{
+    int n;
+    queue *aux = NULL;
+    queue *previous = NULL;
+    int index;
+
+
+    n = read(fd_ss, data, BUFFER_SIZE - 1);
+    if(n == 0 || n == -1)
+    {
+        //Mandar broken stream em caso de perda de ligação
+        if (flag_d) printf("Perdida a ligação ao servidor fonte\n");
+        *is_flowing = 0;
+
+        aux = *redirect_queue_head;
+        while(aux != NULL)
+        {
+            index = getIndex(aux);
+            n = broken_stream(fd_array[index]);
+            if(n == 0)
+            {
+                if(flag_d) printf("Perdida a ligação ao para a jusante %s:%s\n", getIP(aux), getPORT(aux));
+                close(fd_array[index]);
+                fd_array[index] = -1;
+                (*tcp_occupied)--;
+                *redirect_queue_head = removeElement(aux, *redirect_queue_head, redirect_queue_tail, previous);
+                if(*redirect_queue_head == NULL) *empty_redirect_queue = 1;
+            }
+            else if(n == -1)
+            {
+                if(flag_d) printf("Falha ao comunicar com o par a jusante %s:%s\n", getIP(aux), getPORT(aux));
+            }
+
+            previous = aux;
+            aux = getNext(aux);
+        }
+
+        return 0;
+    }
+
+    return n;
+}
+
+queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,
+                      queue **redirect_queue_tail, int *empty_redirect_queue)
+{
+    int n, index;
+    queue *aux = NULL;
+    queue *previous = NULL;
+    char data_header[DATA_HEADER_LEN];
+    char *ptr = NULL;
+
+    sprintf(data_header, "DA %04X\n", data_len);
+
+    aux = redirect_queue_head;
+    while(aux != NULL)
+    {
+        index = getIndex(aux);
+        ptr = data_header;
+        n = tcp_send(strlen(ptr), ptr, fd_array[index]);
+        if(n == 0)
+        {
+            //Perdeu-se a ligação ao par a jusante, tentar entrar de novo
+            if(flag_d) printf("Perdida a ligação ao par a jusante %s:%s\n", getIP(aux), getPORT(aux));
+            close(fd_array[index]);
+            fd_array[index] = -1;
+            (*tcp_occupied)--;
+            redirect_queue_head = removeElement(aux, redirect_queue_head, redirect_queue_tail, previous);
+            if(redirect_queue_head == NULL) *empty_redirect_queue = 1;
+
+        }
+        else
+        {
+            n = tcp_send(data_len, data, fd_array[index]);
+            if(n == 0)
+            {
+                //Perdeu-se a ligação ao par a jusante, tentar entrar de novo
+                if(flag_d) printf("Perdida a ligação ao par a jusante %s:%s\n", getIP(aux), getPORT(aux));
+                close(fd_array[index]);
+                fd_array[index] = -1;
+                (*tcp_occupied)--;
+                redirect_queue_head = removeElement(aux, redirect_queue_head, redirect_queue_tail, previous);
+                if(redirect_queue_head == NULL) *empty_redirect_queue = 1;
+                return redirect_queue_head;
+            }
+        }
+
+        previous = aux;
+        aux = getNext(aux);
+    }
+
+    return redirect_queue_head;
+}
+
+queue *send_is_flowing(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
+        queue *element, queue **redirect_queue_tail, queue *previous, int *empty_redirect_queue, int remove_by_index)
+{
+    int n;
+
+    if(is_flowing)
+    {
+        n = stream_flowing(fd_array[index]);
+        if(n == 0)
+        {
+            //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+            if(flag_d) printf("Perdida a ligação ao par a jusante %s:%s\n", getIP(element), getPORT(element));
+            close(fd_array[index]);
+            fd_array[index] = -1;
+            (*tcp_occupied)--;
+            if(remove_by_index)
+            {
+                redirect_queue_head = removeElementByIndex(redirect_queue_head, redirect_queue_tail, index) ;
+            }
+            else
+            {
+                redirect_queue_head = removeElement(element, redirect_queue_head, redirect_queue_tail, previous);
+            }
+
+
+            if(redirect_queue_head == NULL) *empty_redirect_queue = 1;
+        }
+        if(flag_d) printf("Mensagem enviada ao par a jusante %s:%s: SF\n\n", getIP(element), getPORT(element));
+    }
+
+    return redirect_queue_head;
+}
+
+
 
 
 
