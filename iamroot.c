@@ -13,6 +13,10 @@ le se uma mensagem completa se houver (se nao houver vai se outra vez para o sel
 -> o que acontece se não houver pops suficientes para dar. Ex: bestpops = 5. Tem apenas um filho que aceita tcp_sessions = 1
  logo nunca vai receber 5 pops
 
+-> o que acontece se mandar o WHOISROOT periódico e a resposta não for URROOT?
+
+-> variável de entrada para definir o timeout entre pop_queries??? acho que era bom
+
  ****************************************************************************************************************************************************************************/
 
 
