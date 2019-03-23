@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_ss, fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                        fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1);
+                        fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1, tsecs, rsaddr, rsport);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
                 send_new_pop(fd_pop, ipaddr, tport, fd_rs, res_rs, fd_tcp_server, fd_array);
                 ////////////////////////// 6. Executar a interface de utilizador ////////////////////////////////////////
                 interface_not_root(fd_rs, res_rs, streamID, streamIP, streamPORT, &is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                        fd_tcp_server, fd_array, bestpops, fd_pop, pop_addr, pop_tport, rsaddr, rsport);
+                        fd_tcp_server, fd_array, bestpops, fd_pop, pop_addr, pop_tport, rsaddr, rsport, tsecs);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
         }

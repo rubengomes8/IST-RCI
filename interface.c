@@ -15,7 +15,7 @@ extern int ascii;
 
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
-        queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue)
+        queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport)
 {
     int maxfd, counter;
     fd_set fd_read_set;
@@ -34,7 +34,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     struct _queue *aux_pops_queue_tail = NULL;
     struct _queue *aux_pops_queue_aux = NULL;
     int empty_aux_pops_queue = 1;
-    int counter_aux_pops = 0;
+    //int counter_aux_pops = 0;
 
 
     char msg[MAX_BYTES]; msg[0] = '\0';
@@ -51,9 +51,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     char buffer_data[BUFFER_SIZE];
     int data_len;
 
+    long reference_time_whoisroot = time(NULL);
+    long reference_time_pop_query = time(NULL);
+    long now = time(NULL);
+    char *msg_whoisroot = NULL;
+    char buffer_whoisroot[BUFFER_SIZE];
+
     //ler dos pares tcp a jusante
     queue *aux = NULL;
-    queue *previous = NULL;
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -77,6 +82,58 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                     &empty_redirect_queue, &tcp_occupied);
         }
 
+
+        now = time(NULL);
+        if(now -reference_time_whoisroot >= tsecs)
+        {
+            msg_whoisroot = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
+            if(!strcmp(msg, "ERROR"))
+            {
+                //O que fazer? Pode acontecer?
+            }
+            else
+            {
+                strncpy(buffer_whoisroot, msg_whoisroot, 6);
+                buffer_whoisroot[6] = '\0';
+
+                if(!strcmp(buffer_whoisroot, "URROOT"))
+                {
+                    reference_time_whoisroot = time(NULL);
+                }
+                else if(!strcmp(buffer_whoisroot, "ROOTIS"))
+                {
+                    //O que fazer? Pode acontecer?
+                }
+            }
+            free(msg_whoisroot);
+            msg_whoisroot = NULL;
+        }
+        if(now - reference_time_pop_query >= POP_QUERY_TIMEOUT)
+        {
+            query_id++;
+            redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                  &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+            //está à espera da resposta do pop_query
+            waiting_pop_reply = 1;
+            received_pops = 0;
+
+            if(redirect_queue_head == NULL)
+            {
+                //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                empty_redirect_queue = 1;
+                tcp_occupied = 0;
+                for(i = 0; i<tcp_sessions; i++)
+                {
+                    if(fd_array[i] != -1)
+                    {
+                        close(fd_array[i]);
+                        fd_array[i] = -1;
+                    }
+                }
+            }
+
+            reference_time_pop_query = time(NULL);
+        }
 
         //Espera que 1 ou mais file descriptors estejam prontos
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL,  (struct timeval *)NULL);
@@ -433,7 +490,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
 void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char *streamIP, char *streamPORT, int *is_root, char* ipaddr, char *uport,
         char *tport, int tcp_sessions, int tcp_occupied, int fd_tcp_server, int *fd_array, int bestpops,
-        int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport)
+        int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport, int tsecs)
 {
     int maxfd, counter;
     fd_set fd_read_set;
@@ -451,7 +508,6 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
     struct _queue* redirect_aux = NULL;
     int empty_redirect_queue = 1; //indica que a queue está vazia quando é igual a 1
     struct _queue* aux = NULL;
-    struct _queue* previous = NULL;
    
     char buffer[MAX_BYTES]; buffer[0] = '\0';
     char *ptr = NULL;
@@ -578,7 +634,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                                         if(n == 1) return;
                                     }
                                     else
@@ -613,7 +669,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                                 if(n == 1) return;
                             }
                         }
@@ -641,7 +697,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 //Readere à stream
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                 if(n == 1) return;
             }
             else
@@ -686,7 +742,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                             n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                          fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                         pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                         pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                             if(n == 1) return;
                         }
                         else
@@ -779,7 +835,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 close(fd_pop);
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                                 if(n == 1) return;
                             }
                             else
@@ -855,7 +911,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                                 if(n == 1) return;
                             }
                         }
@@ -1148,7 +1204,7 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
 int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
         queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
         int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
-        char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux)
+        char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs)
 {
     //Variáveis para readesão
     struct addrinfo *res_udp = NULL;
@@ -1197,7 +1253,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
             //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
             interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
                            fd_udp, fd_tcp_server, fd_array, bestpops, *redirect_queue_head, *redirect_queue_tail,
-                           redirect_aux, *empty_redirect_queue);
+                           redirect_aux, *empty_redirect_queue, tsecs, rsaddr, rsport);
             return 1; //Se ele sair da inferface_root é porque o programa foi terminado
 
         }
@@ -1221,7 +1277,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                     //Vamos tentar uma nova readesão
                     readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
-                            fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux);
+                            fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
                     return 1;
                 }
 
