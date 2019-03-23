@@ -43,6 +43,7 @@
 #include "udp.h"
 #include "queue.h"
 #include <sys/select.h>
+#include "interface.h"
 
 //////////////////////////////////// Comunicação com o servidor de raízes //////////////////////////////////////////////
 int dump(int fd_rs, struct addrinfo *res_rs);
@@ -76,8 +77,9 @@ int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions);
 int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd);
 
 //Monitorização da estrutura da árvore de escoamento
-int send_tree_query(char *ip, char *tport, int fd);
-void receive_tree_query(char *ptr, char *ip, char *tport);
+queue* send_tree_query(char *ip, char *tport, int *fd_array, int tcp_sessions, int *tcp_occupied, queue *redirect_queue_head,
+                       queue **redirect_queue_tail, int *empty_redirect_queue);
+int receive_tree_query(char *ptr, char *ip, char *tport);
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd);
 int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son);
 //Monitoriazação da estrutura da árvore de escoamento associada à root

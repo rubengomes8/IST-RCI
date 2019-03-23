@@ -18,7 +18,8 @@ int read_terminal(int fd_rs, struct addrinfo *res_rs, char *streamID, int is_roo
                    int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, char *pop_addr, char *pop_tport,
                    int is_flowing);
 queue *receive_newpop(queue *redirect_queue_head, queue **redirect_queue_tail, int i, int *fd_array, int *empty_queue, char *msg);
-queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpops, queue *redirect_queue_head, queue **redirect_queue_tail);
+queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpops, queue *redirect_queue_head, queue **redirect_queue_tail,
+        int *tcp_occupied, int *empty_redirect_queue);
 queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
         int *received_pops, int waiting_pop_reply);
 int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
@@ -36,5 +37,7 @@ queue *send_broken_stream_to_all(int *fd_array, int *tcp_occupied, queue *redire
                                  int *empty_redirect_queue);
 queue *send_stream_flowing_to_all(int *fd_array, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,
                                   int *empty_redirect_queue);
+queue* lost_son(queue *aux, int *fd_array, int i, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,
+                int *empty_redirect_queue, queue *previous, int remove_by_index);
 
 #endif //RCI_INTERFACE_H

@@ -555,7 +555,7 @@ int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd)
     msg = (char *)malloc(sizeof(char)*(strlen(ip) + strlen(port) + 7 + 4 + (avails/10)+1 + 1));
     if(msg == NULL)
     {
-        if(flag_d) fprintf(stderr, "Erro: send_pop_reply: malloc: %s\n", strerror(errno));
+        if(flag_d) fprintf(stderr, "Erro: send_pop_reply: malloc: %s\n\n", strerror(errno));
         exit(1);
     }
 
@@ -622,10 +622,14 @@ int receive_data_header(int *data_len, char *msg)
 }
 
 /////////////////////////////////// Monitorização da estrutura da árvore ///////////////////////////////////////////////
-int send_tree_query(char *ip, char *tport, int fd)
+queue* send_tree_query(char *ip, char *tport, int *fd_array, int tcp_sessions, int *tcp_occupied, queue *redirect_queue_head,
+        queue **redirect_queue_tail, int *empty_redirect_queue)
 {
     char *msg = NULL;
     int n;
+    queue *aux = NULL;
+    queue *previous = NULL;
+    int index;
 
     msg = (char *)malloc(sizeof(char)*TQ_LEN);
     if(msg == NULL)
@@ -636,38 +640,44 @@ int send_tree_query(char *ip, char *tport, int fd)
 
     sprintf(msg, "TQ %s:%s\n", ip, tport);
 
-    n = tcp_send(strlen(msg), msg, fd);
-    if(n == -1)
+    aux = redirect_queue_head;
+    while(aux != NULL)
     {
-        if(flag_d) printf("Erro duranto o envio da mensagem Tree Query\n");
-        free(msg);
-        return -1;
-    }
-    else if(n == 0)
-    {
-        if(flag_d) printf("Falha ao enviar a mensagem Tree Query: conexão terminada pelo peer\n");
-        //Temos de retirar o peer da lista de filhos acho eu
-        free(msg);
-        return 0;
-    }
+        index = getIndex(aux);
+        n = tcp_send(strlen(msg), msg, fd_array[index]);
 
+        if(n == 0)
+        {
+            redirect_queue_head = lost_son(aux, fd_array, index, tcp_occupied, redirect_queue_head, redirect_queue_tail,
+                                           empty_redirect_queue, previous, 0);
+        }
 
+        previous = aux;
+        aux = getNext(aux);
+    }
 
     free(msg);
-    return 1;
+    return redirect_queue_head;
 }
 
-void receive_tree_query(char *ptr, char *ip, char *tport){
+int receive_tree_query(char *ptr, char *ip, char *tport){
 
     char *token = NULL;
 
     token = strtok(ptr, " "); //TQ
+    if(token == NULL) return -1;
+    token = NULL;
 
     token = strtok(NULL, ":");//ipaddr
+    if(token == NULL) return -1;
     strcpy(ip, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
+    if(token == NULL) return -1;
     strcpy(tport, token);
+
+    return 0;
 
 }
 
