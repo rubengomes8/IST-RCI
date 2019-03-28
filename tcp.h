@@ -17,6 +17,7 @@
 int tcp_socket_connect(char *host, char *service);
 int tcp_send(int nbytes, char *ptr, int fd);
 int tcp_receive(int nbytes, char *ptr, int fd);
+int tcp_receive2(int nbytes, char *ptr, int fd);
 
 int tcp_bind(char *service, int tcp_sessions);
 int tcp_accept(int fd_tcp_server);

@@ -82,6 +82,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
 }
 
 //Recebe mensagem de fd, com máximo de nbytes e escreve-a em ptr
+//ANTIGA
 int tcp_receive(int nbytes, char *ptr, int fd)
 {
     int nleft, nread;
@@ -93,8 +94,8 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     while (flag == 0 || *(ptr-1) != '\n')
     {
         flag = 1;
-       // nread = read(fd, ptr, nleft);
-       nread = read(fd, ptr, 1); //lê um char de cada vez
+        // nread = read(fd, ptr, nleft);
+        nread = read(fd, ptr, 1); //lê um char de cada vez
         if(nread == -1)
         {
             if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));
@@ -109,6 +110,37 @@ int tcp_receive(int nbytes, char *ptr, int fd)
     }
     nread = nbytes - nleft;
     //Se calhar pôr \0 sempre aqui no fim da mensagem
+    return nread;
+}
+
+//NOVA
+int tcp_receive2(int nbytes, char *ptr, int fd)
+{
+    int nleft, nread;
+
+    nleft = nbytes;
+    int flag = 0;
+
+    while(1)
+    {
+        nread = read(fd, ptr, 1);
+        if(nread == -1)
+        {
+            if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));
+            return 0;
+        }
+        else if(nread == 0)
+        {
+            return 0; //conexão terminada pelo peer
+        }
+        nleft -= nread;
+        ptr += nread;
+
+
+        if(*(ptr-1) == '\n') break;
+    }
+
+    nread = nbytes-nleft;
     return nread;
 }
 
