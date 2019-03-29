@@ -5,6 +5,11 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include "utils.h"
+#include "queue.h"
+
+#define IP_LEN 15
+#define PORT_LEN 5
 
 typedef struct _intermlist intermlist;
 
@@ -21,35 +26,6 @@ intermlist *getNextInterm(intermlist *element);
 #endif //RCI_INTERMEDIATELIST_H
 
 
- //////////////////////////////////////////
-    /*struct _printlist *head = NULL;
-    struct _printlist *aux = NULL;
-    struct _printlist *tail = NULL;
-
-    struct _intermlist **interm_list = NULL;
-
-    interm_list = (intermlist **)malloc(sizeof(intermlist*)*tcp_sessions);
-    if(interm_list == NULL)
-    {
-        if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
-        free(interm_list);
-        return;
-    }
-
-    for(i = 0; i<tcp_sessions; i++)
-    {
-        interm_list[i] = NULL;
-        interm_list[i] = (interm_list *)malloc(sizeof(char)*sizeof(intermlist));
-        if(interm_list[i] == NULL)
-        {
-            for(j = 0; j<i; j++)
-            {
-                free(interm_list[i]);
-            }
-            free(interm_list);
-            if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
-            return;
-        }
-        //aux_buffer_sons[i] = '\0';    
-    }
-    */
+intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *ptr);
+intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *ptr, int *fd_array, int tcp_sessions, int *tcp_occupied, queue **redirect_queue_head,
+        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing);

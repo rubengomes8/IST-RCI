@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include "intermediate_list.h"
 
 typedef struct _printlist printlist;
 
@@ -14,6 +15,9 @@ void freePrintList(printlist *head);
 void freeElementPrint(printlist *element);
 char *getLinePrint(printlist *element);
 printlist *getNextPrint(printlist *element);
+
+char *construct_line(intermlist *intermlist);
+void print_tree(printlist *head, char *streamID);
 
 
 #endif //RCI_PRINTLIST_H

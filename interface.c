@@ -1,5 +1,7 @@
 #include "interface.h"
 #include "utils.h"
+#include "list_to_print.h"
+#include "intermediate_list.h"
 
 extern int flag_d;
 extern int flag_b;
@@ -103,6 +105,40 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     //ler dos pares tcp a jusante
     queue *aux = NULL;
 
+     //////////////////////////////////////////
+    struct _printlist *head_print = NULL;
+    struct _printlist *aux_print = NULL;
+    struct _printlist *tail_print = NULL;
+    char *line;
+    int missing = 0;
+
+    struct _intermlist **interm_list = NULL;
+
+    interm_list = (struct _intermlist **)malloc(sizeof(struct _intermlist*)*tcp_sessions);
+    if(interm_list == NULL)
+    {
+        if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
+        free(interm_list);
+        return;
+    }
+
+    for(i = 0; i<tcp_sessions; i++)
+    {
+        interm_list[i] = NULL;
+        interm_list[i] = (struct _intermlist *)malloc(sizeof(int)+(IP_LEN+1)*sizeof(char)+(PORT_LEN+1)*sizeof(char)+sizeof(struct _intermlist*));
+        if(interm_list[i] == NULL)
+        {
+            for(j = 0; j<i; j++)
+            {
+                free(interm_list[i]);
+            }
+            free(interm_list);
+            if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
+            return;
+        }   
+    }
+    
+
    
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -113,6 +149,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         {
             redirect_queue_head = root_send_tree_query(redirect_queue_head, &redirect_queue_tail, fd_array,
                     &empty_redirect_queue, &tcp_occupied);
+            missing += tcp_occupied;
         }
 
 
@@ -334,10 +371,57 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         {
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             //Receber o tree reply
-                            //Vai receber de um filho e vai  
 
+                            //Se não tiver nada na lista intermédia, constrói o primeiro nó
+                            if(interm_list[i] == NULL)
+                                interm_list[i] = construct_interm_list_header(interm_list[i], aux_buffer_sons[i]);
+                            missing--;
+                            while(1)
+                            {
 
+                                aux_buffer_sons[i][0] = '\0';
+                                aux_ptr_sons[i] = aux_buffer_sons[i];
+                                buffer[0] = '\0';
 
+                                nread = tcp_receive2(BUFFER_SIZE - 1, (aux_ptr_sons[i]), fd_array[i]); 
+                                if(nread == 0)
+                                {
+                                    redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
+                                            &empty_redirect_queue, NULL, 1);
+                                }
+
+                                if(!strcmp(aux_ptr_sons[i], "\n"))
+                                {
+                                    //Vai pegar no interm_list[i] e adicionar um nó à lista print_list
+                                    if(head_print == NULL)
+                                    {
+                                        line = construct_line(interm_list[i]);
+                                        head_print = newElementPrint(line);
+                                    }
+                                    else
+                                    {
+                                        line = construct_line(interm_list[i]);
+                                        tail_print = insertTailPrint(line, tail_print);
+                                    }
+
+                                    //Fazer free da interm_list[i]
+                                    freeIntermList(interm_list[i]);
+
+                                    // Verifica se foi o úlitmo TR que necessitava de receber. Caso for imprime a lista
+                                    if(missing == 0)
+                                    {
+                                        print_tree(head_print, streamID);
+                                        freePrintList(head_print);
+                                    }
+           
+                                }
+                                else
+                                {
+                                   interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array, tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail, &empty_redirect_queue, &missing);              
+                                }
+                                
+
+                            }
 
                         }
 

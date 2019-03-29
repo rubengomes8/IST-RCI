@@ -66,19 +66,19 @@ queue.o:  queue.c queue.h
 # To create the object file list_to_print.o, we need the source files
 # queue.c and queue.h:
 #
-list_to_print.o:  list_to_print.c list_to_print.h
+list_to_print.o:  list_to_print.c list_to_print.h intermediate_list.h
 	$(CC) $(CFLAGS) -c list_to_print.c
 
 # To create the object file queue.o, we need the source files
 # queue.c and queue.h:
 #
-intermediate_list.o:  intermediate_list.c intermediate_list.h
+intermediate_list.o:  intermediate_list.c intermediate_list.h utils.h queue.h
 	$(CC) $(CFLAGS) -c intermediate_list.c
 
 # To create the object file interface.o, we need the source files
 # interface.c and interface.h:
 #
-interface.o:  interface.c interface.h utils.h queue.h
+interface.o:  interface.c interface.h utils.h queue.h intermediate_list.h list_to_print.h
 	$(CC) $(CFLAGS) -c interface.c
 
 # To start over from scratch, type 'make clean'.  This

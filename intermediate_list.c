@@ -8,6 +8,9 @@ struct _intermlist
     struct _intermlist *next;
 };
 
+extern int flag_d;
+extern int flag_b;
+
 //Retorna a head de uma nova fila em caso de sucesso, ou NULL em caso de insucesso
 intermlist *newElementInterm(char *ip, char *port, int tcp_sessions)
 {
@@ -114,4 +117,79 @@ intermlist *getNextInterm(intermlist *element)
 {
     if(element == NULL) return NULL;
     return element->next;
+}
+
+
+///////////////////////////////////////////////////////////////////
+intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *ptr)
+{
+	char *token = NULL;
+	char ip[IP_LEN+1];
+	char port[PORT_LEN+1];
+	char tcp_sessions_str[4];
+	int tcp_sessions;
+
+	token = strtok(ptr, " ");
+
+    token = strtok(NULL, ":");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o IP...\n");
+        return NULL;
+    }
+    strcpy(ip, token);
+
+    token = strtok(NULL, " ");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o porto...\n");
+        return NULL;
+    }
+    strcpy(port, token);
+
+    token = strtok(NULL, "\n");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o número de ligações tcp...\n");
+        return NULL;
+    }
+    strcpy(tcp_sessions_str, token);
+    tcp_sessions = atoi(tcp_sessions_str);
+
+    interm_list = newElementInterm(ip, port, tcp_sessions);
+
+    return interm_list;
+}
+
+intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *ptr, int *fd_array, int tcp_sessions, int *tcp_occupied, queue **redirect_queue_head,
+        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing)
+{
+	char *token = NULL;
+	char ip[IP_LEN+1];
+	char port[PORT_LEN+1];
+	char tree_query_str[TQ_LEN];
+
+	token = strtok(ptr, ":");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o IP...\n");
+        return NULL;
+    }
+    strcpy(ip, token);
+
+    token = strtok(NULL, "\n");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha em obter o porto...\n");
+        return NULL;
+    }
+    strcpy(port, token);
+
+    *redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head, redirect_queue_tail, empty_redirect_queue);
+   	*missing++;
+
+
+    interm_list = insertTailInterm(ip, port, -1, interm_list);
+
+    return interm_list;
 }

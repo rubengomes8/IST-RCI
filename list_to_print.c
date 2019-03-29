@@ -1,11 +1,14 @@
 #include "list_to_print.h"
 
+
 struct _printlist
 {
     char *line;
     struct _printlist *next;
 };
 
+extern int flag_d;
+extern int flag_b;
 
 //Retorna a head de uma nova fila em caso de sucesso, ou NULL em caso de insucesso
 printlist *newElementPrint(char *line)
@@ -83,4 +86,63 @@ printlist *getNextPrint(printlist *element)
 {
     if(element == NULL) return NULL;
     return element->next;
+}
+
+
+
+////////////////////////////////////////
+
+char *construct_line(intermlist *intermlist)
+{
+	int tcp_sessions;
+	struct _intermlist *aux = intermlist;
+	char *msg = NULL;
+	tcp_sessions = getTcpSessionsInterm(aux);
+	char tcp_sessions_str[4];
+
+	msg = (char*)malloc(sizeof(char)*(28+21*tcp_sessions)); //15+1+5+1+5+1+21*tcp_sessions = 28+21*tcp_sessions
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: construct_line: malloc: %s\n", strerror(errno));
+        return NULL;
+    }
+
+    strcpy(msg, getIPInterm(aux));
+    strcat(msg, ":");
+    strcpy(msg, getPORTInterm(aux));
+    strcat(msg, " (");
+    sprintf(tcp_sessions_str, "%d", tcp_sessions);
+    strcat(msg, tcp_sessions_str);
+
+    aux=getNextInterm(aux);
+    if(aux != NULL)
+    {
+    	while(aux != NULL)
+	    {
+	    	strcat(msg, " ");
+	    	strcpy(msg, getIPInterm(aux));
+		    strcat(msg, ":");
+		    strcpy(msg, getPORTInterm(aux));
+	    	aux=getNextInterm(aux);
+	    }
+
+    }
+    else
+    {
+    	strcat(msg, ")\n");
+    	return msg;
+    }
+    strcat(msg, ")\n");
+
+	return msg;
+}
+
+void print_tree(printlist *head, char *streamID)
+{
+	printlist *aux = head;
+
+	while(aux != NULL)
+	{
+		printf("%s", getLinePrint(aux));
+	}
 }
