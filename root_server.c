@@ -47,9 +47,10 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     maxfd = fd_rs;
 
     counter = select(maxfd + 1, &fdSet, (fd_set *)NULL, (fd_set *)NULL, timeout);
-    if(counter <= 0)
+    if(counter < 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
+        if(flag_d && counter == 0) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
+        else if(flag_d && counter == -1) fprintf(stderr, "Erro: select: %s\n", strerror(errno));
         free(timeout);
         return -1;
     }
@@ -122,7 +123,8 @@ char *who_is_root(int fd_rs, struct addrinfo *res_rs, char *streamID, char *rsad
 
     if(counter <= 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
+        if(flag_d && counter == 0) printf("Timed out: não foi recebida nenhuma resposta do servidor de raízes\n");
+        else if(flag_d && counter == -1) fprintf(stderr, "Erro: select: %s\n", strerror(errno));
         free(msg2);
         free(timeout);
         return NULL;
@@ -213,7 +215,8 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
 
     if(counter <= 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma resposta do servidor de acessos...\n");
+        if(flag_d && counter == 0) printf("Timed out: não foi recebida nenhuma resposta do servidor de acessos...\n");
+        else if(flag_d && counter == -1) fprintf(stderr, "Erro: select: %s\n", strerror(errno));
         free(timeout);
         return -1;
     }
@@ -254,30 +257,51 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
     return 0;
 }
 
-void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport)
+int popreq_receive(int fd_udp, unsigned int *addrlen, struct sockaddr_in *addr)
 {
     char msg[POPREQ_LEN];
     int msg_len = POPREQ_LEN;
-    char msg2[POPRESP_LEN];
-    int msg_len2 = POPRESP_LEN;
-    struct sockaddr_in addr;
-    unsigned int addrlen;
 
-    addrlen = sizeof(addr);
-
-    //Recebe um POPREQ
-    msg_len = udp_receive(fd_udp, &msg_len, msg, 0, &addr, &addrlen);
-
+    *addrlen = sizeof(*addr);
+    msg_len = udp_receive(fd_udp, &msg_len, msg, 0, addr, addrlen);
     if(flag_d)
     {
-        printf("Mensagem recebida de um novo par: %s", msg);
+        printf("Mensagem recebida de um novo par: %s\n", msg);
+    }
+
+    if(strcmp(msg, "POPREQ\n") != 0)
+    {
+        if(flag_d) printf("Mensagem inválida!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+void popresp(int fd_udp, char *streamID, char *ipaddr, char *tport, unsigned int addrlen, struct sockaddr_in addr)
+{
+    //char msg[POPREQ_LEN];
+    //int msg_len = POPREQ_LEN;
+    char msg2[POPRESP_LEN];
+    int msg_len2 = POPRESP_LEN;
+   // struct sockaddr_in addr;
+    //unsigned int addrlen;
+
+   // addrlen = sizeof(addr);
+
+    //Recebe um POPREQ
+   // msg_len = udp_receive(fd_udp, &msg_len, msg, 0, &addr, &addrlen);
+
+  /*  if(flag_d)
+    {
+        printf("Mensagem recebida de um novo par: %s\n", msg);
     }
 
     if(strcmp(msg, "POPREQ\n") != 0)
     {
         if(flag_d) printf("Mensagem inválida!\n");
         return;
-    }
+    }*/
 
     sprintf(msg2, "POPRESP %s %s:%s\n", streamID, ipaddr, tport);
 
@@ -359,7 +383,8 @@ char *receive_confirmation(int fd_tcp, char *msg)
 
     if(counter <= 0)
     {
-        if(flag_d) printf("Timed out: não foi recebida nenhuma mensagem do par...\n");
+        if(flag_d && counter == 0) printf("Timed out: não foi recebida nenhuma mensagem do par...\n");
+        else if(flag_d && counter == -1) fprintf(stderr, "Erro: select: %s\n", strerror(errno));
         free(timeout);
         free(msg);
         return NULL;
@@ -449,7 +474,7 @@ int newpop(int fd_pop, char *ipaddr, char *tport)
     n = tcp_send(strlen(buffer), buffer, fd_pop);
     if(n == -1)
     {
-        if(flag_d) printf("Erro durante o envio da mensagem New Pop...\n");
+        if(flag_d) printf("Erro durante o envio da mensagem New Pop\n\n");
         return -1;
     }
 

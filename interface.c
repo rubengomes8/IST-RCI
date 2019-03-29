@@ -17,59 +17,77 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
         queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport)
 {
+    //Variáveis para o select
     int maxfd, counter;
     fd_set fd_read_set;
-    int exit_flag = 0;
-    int i;
-    int n;
-    int query_id = 0;
 
+    //Indica se foi introduzido o comando exit
+    int exit_flag = 0;
+
+    //PQ/PR
+    int query_id = 0;
+    int waiting_pop_reply = 0;
+    int received_pops = 0;
 
     //Queue de pops. A raiz nunca faz parte da lista
     struct _queue *pops_queue_head = NULL;
     struct _queue *pops_queue_tail = NULL;
     int empty_pops_queue = 1;
 
+    //Queue de pops auxiliares. Podem não estar atualizados, mas são utilizados quando
+    //não há pops para dar e ainda não chegaram os resultados do PQ
     struct _queue *aux_pops_queue_head = NULL;
     struct _queue *aux_pops_queue_tail = NULL;
     struct _queue *aux_pops_queue_aux = NULL;
     int empty_aux_pops_queue = 1;
-    //int counter_aux_pops = 0;
 
-    ///////// buffers intermédios ////////
-
+    //Buffers intermédios para leitura dos filhos
     char **aux_buffer_sons = NULL;
     char **aux_ptr_sons = NULL;
     int *nread_sons = NULL;
-    int j;
 
-    n = buffer_interm_sons(aux_ptr_sons, aux_buffer_sons, nread_sons, tcp_sessions);
-    if(n == -1) return;
+    //Indica que o par vai ser removido por estar a mandar lixo
+    int flag_remove = 0;
 
-    //////////////////////////////////////
-
-    char msg[MAX_BYTES]; msg[0] = '\0';
-    char *ptr = NULL;
-    char buffer[MAX_BYTES]; buffer[0] = '\0';
-
-    int waiting_pop_reply = 0;
-    int received_pops = 0;
-
+    //SF/BS
     int is_flowing = 1;
 
     //Dados da stream
     char *data = NULL;
-    char buffer_data[BUFFER_SIZE];
+    char buffer_data[DATA_SIZE];
     int data_len;
 
+    //Timers e variáveis para whoisroot
     long reference_time_whoisroot = time(NULL);
     long reference_time_pop_query = time(NULL);
     long now = time(NULL);
     char *msg_whoisroot = NULL;
     char buffer_whoisroot[BUFFER_SIZE];
 
-    //ler dos pares tcp a jusante
+    //Servidor de acessos
+    struct sockaddr_in addr;
+    unsigned int addrlen;
+
+    //Validação de informação recebida
+    int correct_info = 0;
+
+    //Variáveis para ciclos for
+    int i;
+    int j;
+
+    //Variável de verificação de retorno
+    int n;
+
+    //Variável de verificação de headers de mensagens
+    char buffer[MAX_BYTES]; buffer[0] = '\0';
+
+    //Nó auxiliar relativo a um par a jusante
     queue *aux = NULL;
+
+    //Inicializa as variáveis necessárias para os buffers intermédios a jusante
+    n = buffer_interm_sons(&aux_ptr_sons, &aux_buffer_sons, &nread_sons, tcp_sessions);
+    if(n == -1) return;
+
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -137,7 +155,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             waiting_pop_reply = 1;
             received_pops = 0;
 
-            if(redirect_queue_head == NULL)
+           /* if(redirect_queue_head == NULL)
             {
                 //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
                 empty_redirect_queue = 1;
@@ -150,7 +168,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         fd_array[i] = -1;
                     }
                 }
-            }
+            }*/
 
             reference_time_pop_query = time(NULL);
         }
@@ -201,7 +219,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             {
                 if(FD_ISSET(fd_array[i], &fd_read_set))
                 {
-                    ptr = msg;
 
 
                    /* if(aux_ptr_sons[i] == NULL)
@@ -214,13 +231,36 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         aux_ptr_sons[i] = aux_buffer_sons[i];
                     }*/
 
-
-                    nread_sons[i] = tcp_receive2(BUFFER_SIZE -nread_sons[i] - 1, (aux_ptr_sons[i]), fd_array[i]);
+                    flag_remove = 0;
+                    if(nread_sons[i] >= SONS_BUFFER - 1)
+                    {
+                        flag_remove = 1;
+                    }
+                    nread_sons[i] = tcp_receive2(SONS_BUFFER - nread_sons[i] -1, aux_ptr_sons[i], fd_array[i]);
                     aux_ptr_sons[i] += nread_sons[i];
                     //ptr = aux_ptr_sons[i];
 
                     //n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
                     aux = getElementByIndex(redirect_queue_head, i);
+
+                    if(flag_remove)
+                    {
+                        nread_sons[i] = 0;
+                        aux_ptr_sons[i] = aux_buffer_sons[i];
+                        flag_remove = 0;
+                        if(flag_d)
+                        {
+                            if(getIP(aux) != NULL && getPORT(aux) != NULL)
+                            {
+                                printf("O par %s:%s está a enviar lixo e será desconectado\n", getIP(aux), getPORT(aux));
+                            }
+                            else
+                            {
+                                printf("O par acabado de ligar está a enviar lixo e será desconectado\n");
+                            }
+                        }
+                    }
+
 
                     if(nread_sons[i] == 0)
                     {
@@ -249,20 +289,34 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             redirect_queue_head = receive_newpop(redirect_queue_head, &redirect_queue_tail, i, fd_array,
                                     &empty_redirect_queue, aux_buffer_sons[i]);
                             aux = getElementByIndex(redirect_queue_head, i);
-                            if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
 
-                            //Depois de receber o NP, envia um SF/BS
-                            redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
-                                                                  &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
+                            if(getIP(aux) != NULL && getPORT(aux) != NULL)
+                            {
+                                if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
+                                //Depois de receber o NP, envia um SF/BS
+                                redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
+                                                                             &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
 
 
-                            query_id++;
-                            redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                                  &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                            //está à espera da resposta do pop_query
-                            waiting_pop_reply = 1;
+                                query_id++;
+                                redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                                      &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                                //está à espera da resposta do pop_query
+                                waiting_pop_reply = 1;
+                            }
+                            else
+                            {
+                                if(flag_d) printf("Mensagem New Pop do par acabado de ligar errada!\n");
+                                if(flag_d) printf("O par vai ser desligado\n");
+                                redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                        &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
+                            }
 
-                            if(redirect_queue_head == NULL)
+
+
+
+
+                          /*  if(redirect_queue_head == NULL)
                             {
                                 //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
                                 empty_redirect_queue = 1;
@@ -275,7 +329,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                         fd_array[j] = -1;
                                     }
                                 }
-                            }
+                            }*/
 
 
                         }
@@ -283,18 +337,29 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         {
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, aux_buffer_sons[i], &empty_pops_queue,
-                                    query_id, &received_pops, waiting_pop_reply);
+                                    query_id, &received_pops, waiting_pop_reply, &correct_info);
 
-                            //Liberta a lista de pops auxiliares, pois esta já não é precisa
-                            if(received_pops >= bestpops)
+                            if(correct_info == -1)
                             {
-                                waiting_pop_reply = 0;
-                                received_pops = 0;
-                                freeQueue(aux_pops_queue_head);
-                                aux_pops_queue_aux = NULL;
-                                aux_pops_queue_head = NULL;
-                                aux_pops_queue_tail = NULL;
-                                empty_aux_pops_queue = 1;
+                                if(flag_d) printf("Mensagem Pop Reply mal formatada\n");
+                                if(flag_d) printf("O par que enviou a mensagem será desconectado\n");
+
+                                redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                        &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
+                            }
+                            else
+                            {
+                                //Liberta a lista de pops auxiliares, pois esta já não é precisa
+                                if(received_pops >= bestpops)
+                                {
+                                    waiting_pop_reply = 0;
+                                    received_pops = 0;
+                                    freeQueue(aux_pops_queue_head);
+                                    aux_pops_queue_aux = NULL;
+                                    aux_pops_queue_head = NULL;
+                                    aux_pops_queue_tail = NULL;
+                                    empty_aux_pops_queue = 1;
+                                }
                             }
                         }
                         else if(!strcmp("TR", buffer))
@@ -335,6 +400,11 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             if(tcp_sessions > tcp_occupied)
             {
                 i = welcome(tcp_sessions, &tcp_occupied, fd_tcp_server, fd_array, streamID);
+                nread_sons[i] = 0;
+                aux_buffer_sons[i][0] = '\0';
+                aux_ptr_sons[i] = aux_buffer_sons[i];
+                flag_remove = 0;
+
             }
             else if(tcp_sessions == tcp_occupied)
             {
@@ -353,44 +423,48 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         //Servidor de acessos - fizeram um pedido POPREQ
         if(FD_ISSET(fd_udp, &fd_read_set))
         {
-            if(tcp_sessions > tcp_occupied)
+            n = popreq_receive(fd_udp, &addrlen, &addr);
+
+            if(n == 0)
             {
-                //Se tiver sessões disponíveis diz para se ligarem a ele próprio
-                popresp(fd_udp, streamID, ipaddr, tport);
-                //Não se atualiza aqui o nº de sessões ocupadas. Apenas quando se envia welcome
-
-                //porquê tcp_sessions == tcp_occupied +1?
-                if(tcp_occupied > 0 && empty_pops_queue && waiting_pop_reply == 0)
+                if(tcp_sessions > tcp_occupied)
                 {
-                    //faz pop_query
-                    query_id++;
-                    redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                          &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                    //está à espera da resposta do pop_query
-                    waiting_pop_reply = 1;
+                    //Se tiver sessões disponíveis diz para se ligarem a ele próprio
+                    popresp(fd_udp, streamID, ipaddr, tport, addrlen, addr);
+                    //Não se atualiza aqui o nº de sessões ocupadas. Apenas quando se envia welcome
 
-                    if(redirect_queue_head == NULL)
+                    //porquê tcp_sessions == tcp_occupied +1?
+                    if(tcp_occupied > 0 && empty_pops_queue && waiting_pop_reply == 0)
                     {
-                        //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                        empty_redirect_queue = 1;
-                        tcp_occupied = 0;
-                        for(i = 0; i<tcp_sessions; i++)
+                        //faz pop_query
+                        query_id++;
+                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                              &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                        //está à espera da resposta do pop_query
+                        waiting_pop_reply = 1;
+
+                        if(redirect_queue_head == NULL)
                         {
-                            if(fd_array[i] != -1)
+                            //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                            empty_redirect_queue = 1;
+                            tcp_occupied = 0;
+                            for(i = 0; i<tcp_sessions; i++)
                             {
-                                close(fd_array[i]);
-                                fd_array[i] = -1;
+                                if(fd_array[i] != -1)
+                                {
+                                    close(fd_array[i]);
+                                    fd_array[i] = -1;
+                                }
                             }
                         }
                     }
                 }
-            }
-            else
-            {
-                //Se não estiver à espera de um pop_reply
-                //&&received_pops == 0
-              //  if(waiting_pop_reply == 0)
-                //{
+                else
+                {
+                    //Se não estiver à espera de um pop_reply
+                    //&&received_pops == 0
+                    //  if(waiting_pop_reply == 0)
+                    //{
                     //se não tiver nenhum elemento na lista de pops
                     if(empty_pops_queue && tcp_occupied > 0)
                     {
@@ -427,14 +501,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             {
                                 aux_pops_queue_aux = aux_pops_queue_head;
                             }
-                            popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
+                            popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux), addrlen, addr);
                             aux_pops_queue_aux = getNext(aux_pops_queue_aux);
                         }
                     }
                     else
                     {
                         //Caso ainda haja elementos na lista de pops, indicar o endereço do primeiro
-                        popresp(fd_udp, streamID, getIP(pops_queue_head), getPORT(pops_queue_head));
+                        popresp(fd_udp, streamID, getIP(pops_queue_head), getPORT(pops_queue_head), addrlen, addr);
                         decreaseAvailableSessions(pops_queue_head);
                         if(getAvailableSessions(pops_queue_head) == 0)
                         {
@@ -507,39 +581,42 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             }
                         }
                     }
-                //}
-              /*  else
-                {
-                    //Isto está muito estranho. Permite redirecionar mas imprime coisas que nunca mais acabam, porque
-                    //até chegarem as PR passa muitas vezes aqui
-                    //Evita ficar preso aqui
-                    if(counter_aux_pops == MAX_AUX_POPS)
-                    {
-                        query_id++;
-                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
-                                                              redirect_queue_head, &redirect_queue_tail);
-                        waiting_pop_reply = 0;
-                        received_pops = 0;
-                        counter_aux_pops = 0;
-                    }
-                    else
-                    {
-                        //Para não causar atrasos, recorre à lista auxiliar de pops, caso esta não esteja vazia e
-                        //dá um desses pops
-                        if(empty_aux_pops_queue == 0)
-                        {
-                            //Lista "circular" como para o redirect
-                            if(aux_pops_queue_aux == NULL)
-                            {
-                                aux_pops_queue_aux = aux_pops_queue_head;
-                            }
-                            popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
-                            aux_pops_queue_aux = getNext(aux_pops_queue_aux);
-                        }
-                        counter_aux_pops++;
-                    }
-                }*/
+                    //}
+                    /*  else
+                      {
+                          //Isto está muito estranho. Permite redirecionar mas imprime coisas que nunca mais acabam, porque
+                          //até chegarem as PR passa muitas vezes aqui
+                          //Evita ficar preso aqui
+                          if(counter_aux_pops == MAX_AUX_POPS)
+                          {
+                              query_id++;
+                              redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
+                                                                    redirect_queue_head, &redirect_queue_tail);
+                              waiting_pop_reply = 0;
+                              received_pops = 0;
+                              counter_aux_pops = 0;
+                          }
+                          else
+                          {
+                              //Para não causar atrasos, recorre à lista auxiliar de pops, caso esta não esteja vazia e
+                              //dá um desses pops
+                              if(empty_aux_pops_queue == 0)
+                              {
+                                  //Lista "circular" como para o redirect
+                                  if(aux_pops_queue_aux == NULL)
+                                  {
+                                      aux_pops_queue_aux = aux_pops_queue_head;
+                                  }
+                                  popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
+                                  aux_pops_queue_aux = getNext(aux_pops_queue_aux);
+                              }
+                              counter_aux_pops++;
+                          }
+                      }*/
+                }
             }
+
+
         }
 
         //O utilizador introduziu um comando de utilizador
@@ -558,6 +635,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                 }
                 free(aux_buffer_sons);
                 free(aux_ptr_sons);
+                free(nread_sons);
                 return;
             }
         }
@@ -568,26 +646,18 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
         char *tport, int tcp_sessions, int tcp_occupied, int fd_tcp_server, int *fd_array, int bestpops,
         int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport, int tsecs)
 {
+    //Select
     int maxfd, counter;
     fd_set fd_read_set;
-    int exit_flag = 0;
-    int i;
-    int n;
 
+    //Indica se foi invocado o comando exit
+    int exit_flag = 0;
+
+    //PQ e PR
     int query_id = -1;
     int query_id_rcvd;
     int requested_pops;
     int sent_pops = 0;
-
-    struct _queue* redirect_queue_head = NULL;
-    struct _queue* redirect_queue_tail = NULL;
-    struct _queue* redirect_aux = NULL;
-    int empty_redirect_queue = 1; //indica que a queue está vazia quando é igual a 1
-    struct _queue* aux = NULL;
-   
-    char buffer[MAX_BYTES]; buffer[0] = '\0';
-    char *ptr = NULL;
-    char msg[MAX_BYTES]; msg[0] = '\0';
 
     //Variáveis que vieram do pop reply
     char popreply_ip[IP_LEN +1];
@@ -595,6 +665,19 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
     int popreply_avails;
     int query_id_rcvd_aux = 0;
 
+    //Redirects
+    struct _queue* redirect_queue_head = NULL;
+    struct _queue* redirect_queue_tail = NULL;
+    struct _queue* redirect_aux = NULL;
+    int empty_redirect_queue = 1; //indica que a queue está vazia quando é igual a 1
+    struct _queue* aux = NULL;
+
+    //Mensagens
+    char buffer[MAX_BYTES]; buffer[0] = '\0';
+    char *ptr = NULL;
+    char msg[MAX_BYTES]; msg[0] = '\0';
+
+    //SF/BS
     int is_flowing = 0;
 
     //Variáveis que vieram do tree query
@@ -606,6 +689,25 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
     char *data = NULL;
     char *data_ptr = NULL;
     int data_len;
+
+    //Buffers intermédios para leitura dos filhos
+    char **aux_buffer_sons = NULL;
+    char **aux_ptr_sons = NULL;
+    int *nread_sons = NULL;
+
+    //Ciclos
+    int i;
+
+    //Variável de verificação de retorno
+    int n;
+
+    //Filho vai ser removido por enviar lixo
+    int flag_remove = 0;
+
+
+
+    n = buffer_interm_sons(&aux_ptr_sons, &aux_buffer_sons, &nread_sons, tcp_sessions);
+    if(n == -1) return;
 
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
@@ -636,6 +738,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
             if(tcp_sessions > tcp_occupied)
             {
                 i = welcome(tcp_sessions, &tcp_occupied, fd_tcp_server, fd_array, streamID);
+                nread_sons[i] = 0;
+                aux_buffer_sons[i][0] = '\0';
+                aux_ptr_sons[i] = aux_buffer_sons[i];
+                flag_remove = 0;
             }
             else if(tcp_sessions == tcp_occupied)
             {
@@ -656,43 +762,96 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
             {
                 if(FD_ISSET(fd_array[i], &fd_read_set))
                 {
-                    ptr = msg;
-                    n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
+                  //  ptr = msg;
+                  //  n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
+                  //  aux = getElementByIndex(redirect_queue_head, i);
+
+
+
+
+
+                    flag_remove = 0;
+                    if(nread_sons[i] >= SONS_BUFFER - 1)
+                    {
+                        flag_remove = 1;
+                    }
+                    nread_sons[i] = tcp_receive2(SONS_BUFFER - nread_sons[i] -1, aux_ptr_sons[i], fd_array[i]);
+                    aux_ptr_sons[i] += nread_sons[i];
+                    //ptr = aux_ptr_sons[i];
+
+                    //n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
                     aux = getElementByIndex(redirect_queue_head, i);
 
-                    if(n == 0)
+                    if(flag_remove)
+                    {
+                        nread_sons[i] = 0;
+                        aux_ptr_sons[i] = aux_buffer_sons[i];
+                        flag_remove = 0;
+                        if(flag_d)
+                        {
+                            if(getIP(aux) != NULL && getPORT(aux) != NULL)
+                            {
+                                printf("O par %s:%s está a enviar lixo e será desconectado\n", getIP(aux), getPORT(aux));
+                            }
+                            else
+                            {
+                                printf("O par acabado de ligar está a enviar lixo e será desconectado\n");
+                            }
+                        }
+                    }
+
+                    if(nread_sons[i] == 0)
                     {
                         redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
                                                        &empty_redirect_queue, NULL, 1);
                     }
-                    else
+                    else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                     {
                         //Coloca um \0 no fim da mensagem recebida
                         //Se n fosse igual a MAX_BYTES estariamos a apagar o ultimo carater recebido
-                        if (n < MAX_BYTES) {
+                       /* if (n < MAX_BYTES) {
                             *(ptr + n - 1) = '\0';
-                        }
+                        }*/
 
                         //Copia os 2 primeiros carateres de msg para buffer
-                        strncpy(buffer, msg, 2);
+                        strncpy(buffer, aux_buffer_sons[i], 2);
                         buffer[2] = '\0';
 
                         if(!strcmp("NP", buffer))
                         {
                             redirect_queue_head = receive_newpop(redirect_queue_head, &redirect_queue_tail, i, fd_array,
-                                                                 &empty_redirect_queue, ptr);
+                                                                 &empty_redirect_queue, aux_buffer_sons[i]);
                             aux = getElementByIndex(redirect_queue_head, i);
-                            if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
+                            /*if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
 
                             redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head,
-                                    aux, &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
+                                    aux, &redirect_queue_tail, NULL, &empty_redirect_queue, 1);*/
+
+
+
+
+
+                            if(getIP(aux) != NULL && getPORT(aux) != NULL)
+                            {
+                                if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
+                                //Depois de receber o NP, envia um SF/BS
+                                redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
+                                                                             &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
+                            }
+                            else
+                            {
+                                if(flag_d) printf("Mensagem New Pop do par acabado de ligar errada!\n");
+                                if(flag_d) printf("O par vai ser desligado\n");
+                                redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                                               &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
+                            }
                         }
                         else if(!strcmp("PR", buffer))
                         {
 
-                            if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), ptr);
+                            if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
 
-                            query_id_rcvd_aux = receive_pop_reply(ptr, popreply_ip, popreply_port, &popreply_avails);
+                            query_id_rcvd_aux = receive_pop_reply(aux_buffer_sons[i], popreply_ip, popreply_port, &popreply_avails);
                             if(requested_pops - sent_pops > 0) //Se tiver pops por enviar
                             {
                                 query_id_rcvd = query_id_rcvd_aux;
@@ -728,9 +887,9 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         }
                         else if(!strcmp("TR", buffer))
                         {
-                            if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, ptr);
+                            if(flag_d) printf("Mensagem recebida do para a jusante com índice %d: %s\n", i, aux_buffer_sons[i]);
                             //Receber TR
-                            n = receive_tree_reply_and_propagate(ptr, fd_pop, fd_array[i]);
+                            n = receive_tree_reply_and_propagate(aux_buffer_sons[i], fd_pop, fd_array[i]);
                             if(n == 10)
                             {
                                 redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
@@ -750,10 +909,19 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 if(n == 1) return;
                             }
                         }
+
+                        aux_buffer_sons[i][0] = '\0';
+                        aux_ptr_sons[i] = aux_buffer_sons[i];
+                        buffer[0] = '\0';
+                        nread_sons[i] = 0;
                     }
-                    ptr = NULL;
+
+
+
+
+                  /*  ptr = NULL;
                     msg[0] = '\0';
-                    buffer[0] = '\0';
+                    buffer[0] = '\0';*/
                 }
             }
         }
@@ -1022,6 +1190,13 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
             if(exit_flag == 1)
             {
                 freeQueue(redirect_queue_head);
+                free(nread_sons);
+                free(aux_ptr_sons);
+                for(i = 0; i<tcp_sessions; i++)
+                {
+                    free(aux_buffer_sons[i]);
+                }
+                free(aux_buffer_sons);
                 return;
             }
         }
@@ -1240,7 +1415,7 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
 }
 
 queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
-        int *received_pops, int waiting_pop_reply)
+        int *received_pops, int waiting_pop_reply, int *correct_info)
 {
     char ip[IP_LEN + 1];
     char port[PORT_LEN + 1];
@@ -1248,6 +1423,11 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
     int query_id_rcvd;
 
     query_id_rcvd = receive_pop_reply(ptr, ip, port, &available_sessions);
+    if(query_id_rcvd == -1)
+    {
+        *correct_info = -1;
+        return pops_queue_head;
+    }
 
     if(waiting_pop_reply)
     {
@@ -1399,7 +1579,7 @@ int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_
     int index;
 
 
-    n = read(fd_ss, data, BUFFER_SIZE - 1);
+    n = read(fd_ss, data, DATA_SIZE - 1);
     if(n == 0 || n == -1)
     {
         //Mandar broken stream em caso de perda de ligação
@@ -1588,62 +1768,62 @@ queue* lost_son(queue *aux, int *fd_array, int i, int *tcp_occupied, queue *redi
     return redirect_queue_head;
 }
 
-int buffer_interm_sons(char **aux_ptr_sons, char **aux_buffer_sons, int* nread_sons, int tcp_sessions)
+int buffer_interm_sons(char ***aux_ptr_sons, char ***aux_buffer_sons, int** nread_sons, int tcp_sessions)
 {
     int i;
     int j;
 
-    aux_ptr_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
-    if(aux_ptr_sons == NULL)
+    *aux_ptr_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
+    if(*aux_ptr_sons == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
         return -1;
     }
 
-    aux_buffer_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
-    if(aux_buffer_sons == NULL)
+    *aux_buffer_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
+    if(*aux_buffer_sons == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
-        free(aux_ptr_sons);
+        free(*aux_ptr_sons);
         return -1;
     }
 
     for(i = 0; i<tcp_sessions; i++)
     {
-        aux_buffer_sons[i] = NULL;
-        aux_buffer_sons[i] = (char *)malloc(sizeof(char)*BUFFER_SIZE);
-        if(aux_buffer_sons[i] == NULL)
+        *aux_buffer_sons[i] = NULL;
+        *aux_buffer_sons[i] = (char *)malloc(sizeof(char)*SONS_BUFFER);
+        if(*aux_buffer_sons[i] == NULL)
         {
             for(j = 0; j<i; j++)
             {
-                free(aux_buffer_sons[j]);
+                free(*aux_buffer_sons[j]);
             }
-            free(aux_buffer_sons);
-            free(aux_ptr_sons);
+            free(*aux_buffer_sons);
+            free(*aux_ptr_sons);
             if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
             return -1;
         }
         //aux_buffer_sons[i] = '\0';
-        strcpy(aux_buffer_sons[i], "\0");
-        aux_ptr_sons[i] = aux_buffer_sons[i];
+        strcpy(*aux_buffer_sons[i], "\0");
+        *aux_ptr_sons[i] = *aux_buffer_sons[i];
     }
 
-    nread_sons = (int *)malloc(sizeof(int)*tcp_sessions);
-    if(nread_sons == NULL)
+    *nread_sons = (int *)malloc(sizeof(int)*tcp_sessions);
+    if(*nread_sons == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
         for(i = 0; i<tcp_sessions; i++)
         {
-            free(aux_buffer_sons[i]);
+            free(*aux_buffer_sons[i]);
         }
-        free(aux_buffer_sons);
-        free(aux_ptr_sons);
+        free(*aux_buffer_sons);
+        free(*aux_ptr_sons);
         return -1;
     }
 
     for(i = 0; i<tcp_sessions; i++)
     {
-        nread_sons[i] = 0;
+        *nread_sons[i] = 0;
     }
 
     return 0;
