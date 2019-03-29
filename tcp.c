@@ -57,7 +57,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
 
   if(sigaction(SIGPIPE, &act, NULL) == -1)
   {
-      fprintf(stderr, "Perdida a ligação ao par durante a escrita...\n");
+      fprintf(stderr, "Erro ao definir ação de ignorar SIGPIPE\n");
       return 0;
   }
 
@@ -68,6 +68,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
   {
     //Envia o número de bytes que faltam. Recebe o número de bytes enviado com sucesso
     nwritten = write(fd, ptr, nleft);
+    //  nwritten = write(fd, ptr, 1);
     if(nwritten == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: tcp_send: write: %s\n", strerror(errno));
@@ -120,6 +121,18 @@ int tcp_receive2(int nbytes, char *ptr, int fd)
 
     nleft = nbytes;
     int flag = 0;
+
+    /*struct timeval * timeout = NULL;
+
+    timeout = (timeval *)malloc(sizeof(timeval));
+    if(timeout == NULL)
+    {
+        //Mensagem de erro
+    }
+
+    timeout->tv_sec = 5;
+    timeout->tv_usec = 0;*/
+
 
     while(1)
     {

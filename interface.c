@@ -53,6 +53,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     if(aux_buffer_sons == NULL)
     {
         if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
+        free(aux_ptr_sons);
         return;
     }
 
@@ -67,6 +68,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                 free(aux_buffer_sons[j]);
             }
             free(aux_buffer_sons);
+            free(aux_ptr_sons);
             if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
             return;
         }
@@ -105,17 +107,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     while(1)
     {
-        //Preparação dos file descriptors
-        FD_ZERO(&fd_read_set);
-        FD_SET(fd_udp, &fd_read_set);
-        FD_SET(0, &fd_read_set);
-        maxfd = fd_udp;
-        FD_SET(fd_tcp_server, &fd_read_set);
-        maxfd = max(maxfd, fd_tcp_server);
-        FD_SET(fd_ss, &fd_read_set);
-        maxfd = max(maxfd, fd_ss);
-        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
-
         //Verifica se flag_tree está ativa e se estiver envia TREE_QUERY a todos os filhos
         if(flag_tree)
         {
@@ -195,6 +186,17 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
             reference_time_pop_query = time(NULL);
         }
+
+        //Preparação dos file descriptors
+        FD_ZERO(&fd_read_set);
+        FD_SET(fd_udp, &fd_read_set);
+        FD_SET(0, &fd_read_set);
+        maxfd = fd_udp;
+        FD_SET(fd_tcp_server, &fd_read_set);
+        maxfd = max(maxfd, fd_tcp_server);
+        FD_SET(fd_ss, &fd_read_set);
+        maxfd = max(maxfd, fd_ss);
+        fd_array_set(fd_array, &fd_read_set, &maxfd, tcp_sessions);
 
         //Espera que 1 ou mais file descriptors estejam prontos
         counter = select(maxfd + 1, &fd_read_set, (fd_set *)NULL, (fd_set *)NULL,  (struct timeval *)NULL);
@@ -297,12 +299,12 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
                                 empty_redirect_queue = 1;
                                 tcp_occupied = 0;
-                                for(i = 0; i<tcp_sessions; i++)
+                                for(j = 0; j<tcp_sessions; j++)
                                 {
-                                    if(fd_array[i] != -1)
+                                    if(fd_array[j] != -1)
                                     {
-                                        close(fd_array[i]);
-                                        fd_array[i] = -1;
+                                        close(fd_array[j]);
+                                        fd_array[j] = -1;
                                     }
                                 }
                             }
@@ -736,6 +738,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                                         if(flag_d) printf("Perdida a ligação ao par a montante\n\n");
                                         close(fd_pop);
+                                        fd_pop = -1;
 
                                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
@@ -770,7 +773,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                                 if(flag_d) printf("Perdida a ligação ao par a montante...\n\n");
                                 close(fd_pop);
-
+                                fd_pop = -1;
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
@@ -798,6 +801,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                 if(flag_d) printf("Perdida a ligação ao par a montante...\n");
                 close(fd_pop);
+                fd_pop = -1;
 
                 //Readere à stream
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
@@ -843,7 +847,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                             if(flag_d) printf("Perdida a ligação ao par a montante...\n");
                             close(fd_pop);
-
+                            fd_pop = -1;
 
                             n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                          fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
@@ -938,6 +942,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                                 if(flag_d) printf("Perdida a ligação ao par a montante...\n");
                                 close(fd_pop);
+                                fd_pop = -1;
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
@@ -1012,7 +1017,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                                 if(flag_d) printf("Perdida a ligação ao par a montante...\n");
                                 close(fd_pop);
-
+                                fd_pop = -1;
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
