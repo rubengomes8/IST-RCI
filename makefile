@@ -24,8 +24,8 @@ default: iamroot
 # To create the executable file iamroot we need the object files
 # iamroot.o, udp.o, tcp.o, utils.o and interface.o:
 #
-iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o
-	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o
+iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o
+	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o
 
 # To create the object file iamroot.o, we need the source
 # files iamroot.c, udp.h, tcp.h, utils.h and interface,h:
@@ -62,6 +62,18 @@ root_server.o:  root_server.c root_server.h udp.h
 #
 queue.o:  queue.c queue.h
 	$(CC) $(CFLAGS) -c queue.c
+
+# To create the object file list_to_print.o, we need the source files
+# queue.c and queue.h:
+#
+list_to_print.o:  list_to_print.c list_to_print.h
+	$(CC) $(CFLAGS) -c list_to_print.c
+
+# To create the object file queue.o, we need the source files
+# queue.c and queue.h:
+#
+intermediate_list.o:  intermediate_list.c intermediate_list.h
+	$(CC) $(CFLAGS) -c intermediate_list.c
 
 # To create the object file interface.o, we need the source files
 # interface.c and interface.h:

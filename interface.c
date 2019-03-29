@@ -103,6 +103,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     //ler dos pares tcp a jusante
     queue *aux = NULL;
 
+   
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
     while(1)
@@ -333,7 +334,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         {
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             //Receber o tree reply
-                            //Vai receber de um filho e vai
+                            //Vai receber de um filho e vai  
+
+
 
 
                         }
