@@ -41,7 +41,7 @@ queue *send_stream_flowing_to_all(int *fd_array, int *tcp_occupied, queue *redir
                                   int *empty_redirect_queue);
 queue* lost_son(queue *aux, int *fd_array, int i, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,
                 int *empty_redirect_queue, queue *previous, int remove_by_index);
-int buffers_interm_filhos();
+int buffer_interm_sons(char **aux_ptr_sons, char **aux_buffer_sons, int* nread_sons, int tcp_sessions);
 
 
 

@@ -40,43 +40,11 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     char **aux_buffer_sons = NULL;
     char **aux_ptr_sons = NULL;
+    int *nread_sons = NULL;
     int j;
 
-    aux_ptr_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
-    if(aux_ptr_sons == NULL)
-    {
-        if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
-        return;
-    }
-
-    aux_buffer_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
-    if(aux_buffer_sons == NULL)
-    {
-        if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
-        free(aux_ptr_sons);
-        return;
-    }
-
-    for(i = 0; i<tcp_sessions; i++)
-    {
-        aux_buffer_sons[i] = NULL;
-        aux_buffer_sons[i] = (char *)malloc(sizeof(char)*BUFFER_SIZE);
-        if(aux_buffer_sons[i] == NULL)
-        {
-            for(j = 0; j<i; j++)
-            {
-                free(aux_buffer_sons[j]);
-            }
-            free(aux_buffer_sons);
-            free(aux_ptr_sons);
-            if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
-            return;
-        }
-        //aux_buffer_sons[i] = '\0';
-        strcpy(aux_buffer_sons[i], "\0");
-        aux_ptr_sons[i] = aux_buffer_sons[i];
-    }
-    int nread;
+    n = buffer_interm_sons(aux_ptr_sons, aux_buffer_sons, nread_sons, tcp_sessions);
+    if(n == -1) return;
 
     //////////////////////////////////////
 
@@ -233,7 +201,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
             {
                 if(FD_ISSET(fd_array[i], &fd_read_set))
                 {
-                    //ptr = msg;
+                    ptr = msg;
 
 
                    /* if(aux_ptr_sons[i] == NULL)
@@ -247,19 +215,19 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                     }*/
 
 
-                    nread = tcp_receive2(BUFFER_SIZE - 1, (aux_ptr_sons[i]), fd_array[i]);
-                    aux_ptr_sons[i] += nread;
-                    ptr = aux_ptr_sons[i];
+                    nread_sons[i] = tcp_receive2(BUFFER_SIZE -nread_sons[i] - 1, (aux_ptr_sons[i]), fd_array[i]);
+                    aux_ptr_sons[i] += nread_sons[i];
+                    //ptr = aux_ptr_sons[i];
 
                     //n = tcp_receive(MAX_BYTES, ptr, fd_array[i]);
                     aux = getElementByIndex(redirect_queue_head, i);
 
-                    if(nread == 0)
+                    if(nread_sons[i] == 0)
                     {
                         redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
                                 &empty_redirect_queue, NULL, 1);
                     }
-                    else if(aux_buffer_sons[i][nread - 1] == '\n')
+                    else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                     {
                         //Coloca um \0 no fim da mensagem recebida
                         //Se n fosse igual a MAX_BYTES estariamos a apagar o ultimo carater recebido
@@ -267,7 +235,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                            // *(ptr + n - 1) = '\0';
 
                         }*/
-                        aux_buffer_sons[i][nread] = '\0';
+                        aux_buffer_sons[i][nread_sons[i]] = '\0';
 
                         //Copia os 2 primeiros carateres de msg para buffer
                         //strncpy(buffer, msg, 2);
@@ -341,6 +309,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         aux_buffer_sons[i][0] = '\0';
                         aux_ptr_sons[i] = aux_buffer_sons[i];
                         buffer[0] = '\0';
+                        nread_sons[i] = 0;
                     }
 
                   /*  if(aux_buffer_sons[nread-1] == '\n')
@@ -1618,6 +1587,68 @@ queue* lost_son(queue *aux, int *fd_array, int i, int *tcp_occupied, queue *redi
 
     return redirect_queue_head;
 }
+
+int buffer_interm_sons(char **aux_ptr_sons, char **aux_buffer_sons, int* nread_sons, int tcp_sessions)
+{
+    int i;
+    int j;
+
+    aux_ptr_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
+    if(aux_ptr_sons == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        return -1;
+    }
+
+    aux_buffer_sons = (char **)malloc(sizeof(char*)*tcp_sessions);
+    if(aux_buffer_sons == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        free(aux_ptr_sons);
+        return -1;
+    }
+
+    for(i = 0; i<tcp_sessions; i++)
+    {
+        aux_buffer_sons[i] = NULL;
+        aux_buffer_sons[i] = (char *)malloc(sizeof(char)*BUFFER_SIZE);
+        if(aux_buffer_sons[i] == NULL)
+        {
+            for(j = 0; j<i; j++)
+            {
+                free(aux_buffer_sons[j]);
+            }
+            free(aux_buffer_sons);
+            free(aux_ptr_sons);
+            if(flag_d) fprintf(stdout, "Erro: malloc: %s\n\n", strerror(errno));
+            return -1;
+        }
+        //aux_buffer_sons[i] = '\0';
+        strcpy(aux_buffer_sons[i], "\0");
+        aux_ptr_sons[i] = aux_buffer_sons[i];
+    }
+
+    nread_sons = (int *)malloc(sizeof(int)*tcp_sessions);
+    if(nread_sons == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        for(i = 0; i<tcp_sessions; i++)
+        {
+            free(aux_buffer_sons[i]);
+        }
+        free(aux_buffer_sons);
+        free(aux_ptr_sons);
+        return -1;
+    }
+
+    for(i = 0; i<tcp_sessions; i++)
+    {
+        nread_sons[i] = 0;
+    }
+
+    return 0;
+}
+
 
 
 

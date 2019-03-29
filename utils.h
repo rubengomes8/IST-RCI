@@ -1,7 +1,7 @@
 #ifndef UTILS_UTILS_H
 #define UTILS_UTILS_H
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 10
 
 // Definição de tamanho dos vetores que iram alojar o nome da stream, o ip e a porta correspondente
 #define STREAM_ID_SIZE 64

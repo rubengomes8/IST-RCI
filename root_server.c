@@ -441,7 +441,7 @@ int get_redirect(char *pop_addr, char *pop_tport, char *msg)
 
 int newpop(int fd_pop, char *ipaddr, char *tport)
 {
-    int n;
+    int n = 0;
 
     char buffer[NEWPOP_LEN];
 
