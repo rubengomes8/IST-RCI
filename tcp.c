@@ -61,6 +61,8 @@ int tcp_send(int nbytes, char *ptr, int fd)
       return 0;
   }
 
+
+
   nleft = nbytes;
 
   //Envio
@@ -122,28 +124,52 @@ int tcp_receive2(int nbytes, char *ptr, int fd)
     nleft = nbytes;
     int flag = 0;
 
-    /*struct timeval * timeout = NULL;
+    struct timeval* timeout = NULL;
 
-    timeout = (timeval *)malloc(sizeof(timeval));
+    timeout = (struct timeval*)malloc(sizeof(struct timeval));
     if(timeout == NULL)
     {
-        //Mensagem de erro
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        return -1;
     }
 
-    timeout->tv_sec = 5;
-    timeout->tv_usec = 0;*/
+    timeout->tv_sec = 1;
+    timeout->tv_usec = 0;
+
+    fd_set rfd;
+    int maxfd, counter;
 
 
-    while(1)
+    while(nleft > 0)
     {
+        FD_ZERO(&rfd);
+        FD_SET(fd, &rfd);
+        maxfd = fd;
+
+
+        counter = select(maxfd +1, &rfd, (fd_set*)NULL, (fd_set*)NULL, timeout);
+        if(counter == -1)
+        {
+            if(flag_d) fprintf(stderr, "Error: select: %s\n", strerror(errno));
+            free(timeout);
+            return -1;
+        }
+        else if(counter == 0)
+        {
+            //para o caso de vir sem \n
+            break;
+        }
+
         nread = read(fd, ptr, 1);
         if(nread == -1)
         {
             if(flag_d) fprintf(stderr, "Erro: tcp_receive: read: %s\n", strerror(errno));
+            free(timeout);
             return 0;
         }
         else if(nread == 0)
         {
+            free(timeout);
             return 0; //conexão terminada pelo peer
         }
         nleft -= nread;
@@ -154,6 +180,7 @@ int tcp_receive2(int nbytes, char *ptr, int fd)
     }
 
     nread = nbytes-nleft;
+    free(timeout);
     return nread;
 }
 
