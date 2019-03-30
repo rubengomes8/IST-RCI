@@ -30,7 +30,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
              queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
              int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
              char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs,
-             char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing);
+             char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken);
 int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_queue_head, queue **redirect_queue_tail,
                       int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied);
 queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,

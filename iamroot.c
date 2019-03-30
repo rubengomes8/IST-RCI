@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     int welcome = 0;
 
 	char *msg = NULL;
-	int is_flowing = 0;
+	int is_flowing = 1;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     char **aux_buffer_sons = NULL;

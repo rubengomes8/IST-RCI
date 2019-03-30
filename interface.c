@@ -1052,7 +1052,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                                         if(n == 1) return;
                                     }
                                     else
@@ -1088,7 +1088,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                                 if(n == 1) return;
                             }
                         }
@@ -1127,7 +1127,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
-                             aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                             aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                 if(n == 1) return;
             }
             else
@@ -1173,7 +1173,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                          fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                          pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                         redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                         redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                             if(n == 1) return;
                         }
                         else
@@ -1243,7 +1243,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0);
                         if(n == 1) return;
                     }
                     else
@@ -1273,7 +1273,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux,
-                                     tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                     tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0);
                         if(n == 1) return;
                     }
                     else
@@ -1306,7 +1306,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                                 if(n == 1) return;
                             }
                             else
@@ -1383,7 +1383,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
                                 if(n == 1) return;
                             }
                         }
@@ -1698,7 +1698,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
         queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
         int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
         char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs, char **aux_buffer_sons,
-        char **aux_ptr_sons, int *nread_sons, int is_flowing)
+        char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken)
 {
     //Variáveis para readesão
     struct addrinfo *res_udp = NULL;
@@ -1711,9 +1711,15 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
     char buffer_readesao[BUFFER_SIZE];
     int n;
 
+    *is_flowing = 0;
+
     //Envia broken stream
-    *redirect_queue_head = send_broken_stream_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
-              empty_redirect_queue);
+    if(send_broken)
+    {
+        *redirect_queue_head = send_broken_stream_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
+                                                         empty_redirect_queue);
+    }
+
 
 
     /////////////////////////////// Aderir novamente à stream //////////////////////////////////
@@ -1749,7 +1755,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
             interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
                            fd_udp, fd_tcp_server, fd_array, bestpops, *redirect_queue_head, *redirect_queue_tail,
                            redirect_aux, *empty_redirect_queue, tsecs, rsaddr, rsport, aux_buffer_sons, aux_ptr_sons, nread_sons,
-                           is_flowing);
+                           *is_flowing);
             return 1; //Se ele sair da inferface_root é porque o programa foi terminado
 
         }
@@ -1774,7 +1780,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                     n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
                             fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
-                            aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                            aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, send_broken);
 
                     if(n == 0) return 0;
                     else if(n == 1) return 1;
