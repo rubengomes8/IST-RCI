@@ -1718,10 +1718,12 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                 {
                     //falha na comunicação com o servidor de acessos. Podes significar que a raiz saiu
                     //Vamos tentar uma nova readesão
-                    readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
+                    n =readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
                             fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
-                    return 1;
+
+                    if(n == 0) return 0;
+                    else if(n == 1) return 1;
                 }
 
                 welcome_flag = 0;
