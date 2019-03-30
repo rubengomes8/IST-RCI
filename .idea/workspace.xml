@@ -10,20 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1cbc23ac-d573-4c7e-8c02-2d8876fde908" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iamroot.o" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.c" beforeDir="false" afterPath="$PROJECT_DIR$/interface.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/interface.o" beforeDir="false" afterPath="$PROJECT_DIR$/interface.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intermediate_list.o" beforeDir="false" afterPath="$PROJECT_DIR$/intermediate_list.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/list_to_print.c" beforeDir="false" afterPath="$PROJECT_DIR$/list_to_print.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intermediate_list.c" beforeDir="false" afterPath="$PROJECT_DIR$/intermediate_list.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/list_to_print.o" beforeDir="false" afterPath="$PROJECT_DIR$/list_to_print.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/queue.o" beforeDir="false" afterPath="$PROJECT_DIR$/queue.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/root_server.c" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/root_server.o" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tcp.o" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/udp.o" beforeDir="false" afterPath="$PROJECT_DIR$/udp.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.o" beforeDir="false" afterPath="$PROJECT_DIR$/utils.o" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -90,8 +80,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/interface.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="442">
-              <caret line="491" column="51" selection-start-line="491" selection-start-column="51" selection-end-line="491" selection-end-column="51" />
+            <state relative-caret-position="309">
+              <caret line="505" lean-forward="true" selection-start-line="505" selection-end-line="505" />
             </state>
           </provider>
         </entry>
@@ -99,17 +89,17 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/list_to_print.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="399">
-              <caret line="108" column="5" selection-start-line="108" selection-start-column="5" selection-end-line="108" selection-end-column="5" />
+            <state relative-caret-position="-71">
+              <caret line="94" column="20" selection-start-line="94" selection-start-column="6" selection-end-line="94" selection-end-column="20" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils.h">
+        <entry file="file://$PROJECT_DIR$/intermediate_list.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="57">
-              <caret line="3" column="23" selection-start-line="3" selection-start-column="23" selection-end-line="3" selection-end-column="23" />
+            <state relative-caret-position="271">
+              <caret line="123" column="22" selection-start-line="123" selection-start-column="22" selection-end-line="123" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -127,16 +117,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>get_acc</find>
-      <find>interface_root</find>
-      <find>lost_son</find>
-      <find>close(</find>
-      <find>pop_query_peers</find>
-      <find>send_new_pop</find>
-      <find>welcome</find>
-      <find>nread</find>
-      <find>newEl</find>
-      <find>who</find>
       <find>select</find>
       <find>BUFFER_SIZE</find>
       <find>receive_newpop</find>
@@ -155,8 +135,18 @@
       <find>HEAD</find>
       <find>print_tree</find>
       <find>receive_tree_repl</find>
+      <find>getTcpSess</find>
+      <find>getT</find>
+      <find>construct_interm_list</find>
+      <find>construct_line</find>
+      <find>newE</find>
+      <find>newElementInter</find>
       <find>newEle</find>
+      <find>newElementInterm</find>
+      <find>getLinePrint</find>
+      <find>construct</find>
       <find>receive_tree_reply</find>
+      <find>freeP</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -180,8 +170,9 @@
         <option value="$PROJECT_DIR$/root_server.h" />
         <option value="$PROJECT_DIR$/tcp.c" />
         <option value="$PROJECT_DIR$/root_server.c" />
-        <option value="$PROJECT_DIR$/interface.c" />
         <option value="$PROJECT_DIR$/list_to_print.c" />
+        <option value="$PROJECT_DIR$/intermediate_list.c" />
+        <option value="$PROJECT_DIR$/interface.c" />
       </list>
     </option>
   </component>
@@ -247,12 +238,12 @@
       <workItem from="1551995450083" duration="18729000" />
       <workItem from="1552053989399" duration="104351000" />
       <workItem from="1553188841755" duration="48456000" />
-      <workItem from="1553786803458" duration="31456000" />
+      <workItem from="1553786803458" duration="33907000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="265144000" />
+    <option name="totallyTimeSpent" value="267595000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -412,15 +403,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/interface.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="442">
-          <caret line="491" column="51" selection-start-line="491" selection-start-column="51" selection-end-line="491" selection-end-column="51" />
+        <state relative-caret-position="309">
+          <caret line="505" lean-forward="true" selection-start-line="505" selection-end-line="505" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/intermediate_list.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="271">
+          <caret line="123" column="22" selection-start-line="123" selection-start-column="22" selection-end-line="123" selection-end-column="22" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/list_to_print.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="108" column="5" selection-start-line="108" selection-start-column="5" selection-end-line="108" selection-end-column="5" />
+        <state relative-caret-position="-71">
+          <caret line="94" column="20" selection-start-line="94" selection-start-column="6" selection-end-line="94" selection-end-column="20" />
         </state>
       </provider>
     </entry>

@@ -138,6 +138,7 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
         return NULL;
     }
     strcpy(ip, token);
+    token = NULL;
 
     token = strtok(NULL, " ");
     if(token == NULL)
@@ -146,6 +147,7 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
         return NULL;
     }
     strcpy(port, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
     if(token == NULL)
@@ -176,6 +178,7 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
         return NULL;
     }
     strcpy(ip, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
     if(token == NULL)
@@ -184,8 +187,10 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
         return NULL;
     }
     strcpy(port, token);
+    token == NULL;
 
-    *redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head, redirect_queue_tail, empty_redirect_queue);
+    *redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head,
+            redirect_queue_tail, empty_redirect_queue);
    	*missing++;
 
 

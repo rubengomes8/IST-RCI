@@ -420,6 +420,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             if(waiting_tr[i] != 1)
                             {
                                 interm_list[i] = construct_interm_list_header(interm_list[i], aux_buffer_sons[i]);
+                                if(interm_list[i] == NULL)
+                                {
+                                    redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                            &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
+
+                                    //Pensar o que fazer aqui
+                                }
+
 
                                 //prepara a leitura do resto
                                 aux_buffer_sons[i][0] = '\0';
@@ -472,8 +480,8 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 else if(nread_sons[i] == 0)
                                 {
                                     waiting_tr[i] = 0;
-                                    redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
-                                            &empty_redirect_queue, NULL, 1);
+                                    redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                            &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
                                     break;
                                 }
                                 else if(aux_buffer_sons[i][0] == '\n')
@@ -483,6 +491,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     {
                                         line = construct_line(interm_list[i]);
                                         head_print = newElementPrint(line);
+                                        tail_print = head_print;
                                         free(line);
                                     }
                                     else
@@ -513,7 +522,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 }
                                 else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                                 {
-                                    interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array, tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail, &empty_redirect_queue, &missing);
+                                    interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array,
+                                            tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail,
+                                            &empty_redirect_queue, &missing);
 
                                     aux_buffer_sons[i][0] = '\0';
                                     aux_ptr_sons[i] = aux_buffer_sons[i];
