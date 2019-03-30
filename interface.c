@@ -17,7 +17,8 @@ extern int ascii;
 
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
-        queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport)
+        queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport,
+        char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing)
 {
     //Variáveis para o select
     int maxfd, counter;
@@ -44,15 +45,12 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int empty_aux_pops_queue = 1;
 
     //Buffers intermédios para leitura dos filhos
-    char **aux_buffer_sons = NULL;
-    char **aux_ptr_sons = NULL;
-    int *nread_sons = NULL;
+    //char **aux_buffer_sons = NULL;
+    //char **aux_ptr_sons = NULL;
+    //int *nread_sons = NULL;
 
     //Indica que o par vai ser removido por estar a mandar lixo
     int flag_remove = 0;
-
-    //SF/BS
-    int is_flowing = 1;
 
     //Dados da stream
     char *data = NULL;
@@ -75,7 +73,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     //Variáveis para ciclos for
     int i;
-    int j;
 
     //Variável de verificação de retorno
     int n;
@@ -88,7 +85,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
      //////////////////////////////////////////
     struct _printlist *head_print = NULL;
-    struct _printlist *aux_print = NULL;
     struct _printlist *tail_print = NULL;
     char *line;
     int missing = 0;
@@ -127,10 +123,14 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     for(i = 0; i<tcp_sessions; i++) waiting_tr[i] = 0;
     
 
+    int insert_tail = 1;
 
-    //Inicializa as variáveis necessárias para os buffers intermédios a jusante
-    n = buffer_interm_sons(&aux_ptr_sons, &aux_buffer_sons, &nread_sons, tcp_sessions);
-    if(n == -1) return;
+    if(aux_buffer_sons == NULL && aux_ptr_sons == NULL && nread_sons == NULL)
+    {
+        //Inicializa as variáveis necessárias para os buffers intermédios a jusante
+        n = buffer_interm_sons(&aux_ptr_sons, &aux_buffer_sons, &nread_sons, tcp_sessions);
+        if(n == -1) return;
+    }
 
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
@@ -331,8 +331,10 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             {
                                 if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
                                 //Depois de receber o NP, envia um SF/BS
-                                redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
+                                redirect_queue_head = send_is_flowing(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
                                                                              &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
+
+
 
 
                                 query_id++;
@@ -377,7 +379,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         {
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, aux_buffer_sons[i], &empty_pops_queue,
-                                    query_id, &received_pops, waiting_pop_reply, &correct_info);
+                                    query_id, &received_pops, waiting_pop_reply, &correct_info, &insert_tail);
 
                             if(correct_info == -1)
                             {
@@ -413,11 +415,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             if(flag_d && waiting_tr[i] != 1) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             //Receber o tree reply
 
-                            printf("WAITITN TR %d\n", waiting_tr[i]);
                             //está a receber o header, por isso vai construir o primeiro nó
                             if(waiting_tr[i] != 1)
                             {
-                                printf("HEADER\n");
                                 interm_list[i] = construct_interm_list_header(interm_list[i], aux_buffer_sons[i]);
                                 interm_tail[i] = interm_list[i];
                                 if(interm_list[i] == NULL)
@@ -490,7 +490,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     //Vai pegar no interm_list[i] e adicionar um nó à lista print_list
                                     if(head_print == NULL)
                                     {
-                                        printf("PRINT HEAD\n");
                                         line = construct_line(interm_list[i]);
                                         head_print = newElementPrint(line);
                                         tail_print = head_print;
@@ -498,7 +497,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     }
                                     else
                                     {
-                                        printf("TESTE\n");
                                         line = construct_line(interm_list[i]);
                                         tail_print = insertTailPrint(line, tail_print);
                                         free(line);
@@ -532,10 +530,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 }
                                 else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                                 {
-                                    printf("NODES\n");
                                     interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array,
                                             tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail,
-                                            &empty_redirect_queue, &missing, &interm_tail[i], i, aux);
+                                            &empty_redirect_queue, &missing, &(interm_tail[i]), i, aux);
 
 
                                     aux_buffer_sons[i][0] = '\0';
@@ -1008,7 +1005,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             aux = getElementByIndex(redirect_queue_head, i);
                             /*if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
 
-                            redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head,
+                            redirect_queue_head = send_is_flowing(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head,
                                     aux, &redirect_queue_tail, NULL, &empty_redirect_queue, 1);*/
 
 
@@ -1019,7 +1016,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             {
                                 if(flag_d) printf("Mensagem recebida do novo par a jusante: NP %s:%s\n", getIP(aux), getPORT(aux));
                                 //Depois de receber o NP, envia um SF/BS
-                                redirect_queue_head = send_is_flowing_broken(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
+                                redirect_queue_head = send_is_flowing(is_flowing, fd_array, i, &tcp_occupied, redirect_queue_head, aux,
                                                                              &redirect_queue_tail, NULL, &empty_redirect_queue, 1);
                             }
                             else
@@ -1054,7 +1051,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                                         if(n == 1) return;
                                     }
                                     else
@@ -1089,7 +1087,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                                 if(n == 1) return;
                             }
                         }
@@ -1127,7 +1126,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 //Readere à stream
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
+                             aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                 if(n == 1) return;
             }
             else
@@ -1172,7 +1172,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                             n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                          fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                         pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                                         pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                         redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                             if(n == 1) return;
                         }
                         else
@@ -1231,18 +1232,56 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 {
                     if(flag_d) printf("Mensagem recebida do par a montante: BS\n\n");
 
-                    //Envia broken stream aos pares
-                    is_flowing = 0;
-                    redirect_queue_head = send_broken_stream_to_all(fd_array, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
-                                                                    &empty_redirect_queue);
+                    if(is_flowing == 0)
+                    {
+                        //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                        if(flag_d) printf("Foram recebidos dois BS seguidios\n\n");
+                        if(flag_d) printf("A desligar do par a montante\n\n");
+                        close(fd_pop);
+                        fd_pop = -1;
+
+                        n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                     fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                        if(n == 1) return;
+                    }
+                    else
+                    {
+                        //Envia broken stream aos pares
+                        is_flowing = 0;
+                        redirect_queue_head = send_broken_stream_to_all(fd_array, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
+                                                                        &empty_redirect_queue);
+                    }
+
+
                 }
                 else if(!strcmp("SF", buffer))
                 {
                     if(flag_d) printf("Mensagem recebida do par a montante: SF\n\n");
-                    is_flowing = 1;
-                    redirect_queue_head = send_stream_flowing_to_all(fd_array, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
-                            &empty_redirect_queue);
 
+
+                    if(is_flowing)
+                    {
+                        is_flowing = 0;
+                        //Perdeu-se a ligação ao par a montante, tentar entrar de novo
+                        if(flag_d) printf("Foram recebidos dois SF seguidios\n\n");
+                        if(flag_d) printf("A desligar do par a montante\n\n");
+                        close(fd_pop);
+                        fd_pop = -1;
+
+                        n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
+                                     fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
+                                     pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux,
+                                     tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
+                        if(n == 1) return;
+                    }
+                    else
+                    {
+                        is_flowing = 1;
+                        redirect_queue_head = send_stream_flowing_to_all(fd_array, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
+                                                                         &empty_redirect_queue);
+                    }
                 }
                 else if(!strcmp("PQ", buffer))
                 {
@@ -1266,7 +1305,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 fd_pop = -1;
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                                 if(n == 1) return;
                             }
                             else
@@ -1342,7 +1382,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
-                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                                             pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
                                 if(n == 1) return;
                             }
                         }
@@ -1599,7 +1640,7 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
 }
 
 queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
-        int *received_pops, int waiting_pop_reply, int *correct_info)
+        int *received_pops, int waiting_pop_reply, int *correct_info, int *insert_tail)
 {
     char ip[IP_LEN + 1];
     char port[PORT_LEN + 1];
@@ -1629,7 +1670,16 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
             }
             else
             {
-                *pops_queue_tail = insertTail(ip, port, available_sessions, -1, *pops_queue_tail);
+                if(*insert_tail)
+                {
+                    *pops_queue_tail = insertTail(ip, port, available_sessions, -1, *pops_queue_tail);
+                    *insert_tail = 0;
+                }
+                else
+                {
+                    *insert_tail = 1;
+                    pops_queue_head = insertHead(ip, port, available_sessions, -1, pops_queue_head);
+                }
             }
         }
     }
@@ -1647,7 +1697,8 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
 int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
         queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
         int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
-        char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs)
+        char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs, char **aux_buffer_sons,
+        char **aux_ptr_sons, int *nread_sons, int is_flowing)
 {
     //Variáveis para readesão
     struct addrinfo *res_udp = NULL;
@@ -1658,6 +1709,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
     int fd_ss = -1;
     char *msg_readesao = NULL;
     char buffer_readesao[BUFFER_SIZE];
+    int n;
 
     //Envia broken stream
     *redirect_queue_head = send_broken_stream_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
@@ -1696,7 +1748,8 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
             //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
             interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
                            fd_udp, fd_tcp_server, fd_array, bestpops, *redirect_queue_head, *redirect_queue_tail,
-                           redirect_aux, *empty_redirect_queue, tsecs, rsaddr, rsport);
+                           redirect_aux, *empty_redirect_queue, tsecs, rsaddr, rsport, aux_buffer_sons, aux_ptr_sons, nread_sons,
+                           is_flowing);
             return 1; //Se ele sair da inferface_root é porque o programa foi terminado
 
         }
@@ -1718,9 +1771,10 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                 {
                     //falha na comunicação com o servidor de acessos. Podes significar que a raiz saiu
                     //Vamos tentar uma nova readesão
-                    n =readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
+                    n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
-                            fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
+                            fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
+                            aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
 
                     if(n == 0) return 0;
                     else if(n == 1) return 1;
@@ -1836,7 +1890,7 @@ queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array,
     return redirect_queue_head;
 }
 
-queue *send_is_flowing_broken(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
+queue *send_is_flowing(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
         queue *element, queue **redirect_queue_tail, queue *previous, int *empty_redirect_queue, int remove_by_index)
 {
     int n;
@@ -1860,10 +1914,10 @@ queue *send_is_flowing_broken(int is_flowing, int *fd_array, int index, int *tcp
     {
         if(flag_d) printf("Mensagem enviada ao par a jusante %s:%s: SF\n\n", getIP(element), getPORT(element));
     }
-    else
+  /*  else
     {
         if(flag_d) printf("Mensagem enviada ao par a jusante %s:%s: BS\n\n", getIP(element), getPORT(element));
-    }
+    }*/
 
 
 

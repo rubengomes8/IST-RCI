@@ -100,9 +100,6 @@ char *construct_line(intermlist *intermlist)
 	tcp_sessions = getTcpSessionsInterm(aux);
 	char *tcp_sessions_str = NULL;
 
-	printf("TCP SESSIONS %d\n", tcp_sessions);
-	if(tcp_sessions == -1) tcp_sessions = 1;
-
 	tcp_sessions_str = (char*)malloc(sizeof(char)*(tcp_sessions/10 + 1 + 1));
 	if(tcp_sessions_str == NULL)
     {
@@ -140,8 +137,6 @@ char *construct_line(intermlist *intermlist)
 
     strcat(msg, ")\n");
 
-    printf("MENSAGEM %s\n", msg);
-
     free(tcp_sessions_str);
 	return msg;
 }
@@ -171,4 +166,5 @@ void print_tree(printlist *head, char *streamID, queue *redirect_queue_head, cha
 		printf("%s", getLinePrint(aux));
 		aux = getNextPrint(aux);
 	}
+	printf("\n");
 }

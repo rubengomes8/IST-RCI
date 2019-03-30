@@ -64,6 +64,8 @@ void insertTailInterm(char *ip, char *port, int tcp_sessions, intermlist **tail)
     if(new_element == NULL) return;
 
     (*tail)->next = new_element;
+
+    *tail = new_element;
 }
 
 
@@ -167,7 +169,6 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
 	char *token = NULL;
 	char ip[IP_LEN+1];
 	char port[PORT_LEN+1];
-	char tree_query_str[TQ_LEN];
 
 	token = strtok(ptr, ":");
     if(token == NULL)

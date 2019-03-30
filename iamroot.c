@@ -89,7 +89,12 @@ int main(int argc, char *argv[])
     int welcome = 0;
 
 	char *msg = NULL;
+	int is_flowing = 0;
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    char **aux_buffer_sons = NULL;
+    char **aux_ptr_sons = NULL;
+    int *nread_sons = NULL;
 
     //Lê e verifica os restantes argumentos
     has_stream = arguments_reading(argc, argv, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops,
@@ -161,7 +166,8 @@ int main(int argc, char *argv[])
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_ss, fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
-                        fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1, tsecs, rsaddr, rsport);
+                        fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1, tsecs, rsaddr, rsport,
+                        aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -500,7 +506,7 @@ int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, stru
         if(flag_d) printf("Falha ao ligar-se ao par a montante...\n");
         if(flag == 1)
         {
-            printf("A tentar ligar-se de novo...\n");
+            if(flag_d) printf("A tentar ligar-se de novo...\n");
             return -1;
         }
         if(flag == 0) printf("A aplicação irá terminar...\n");

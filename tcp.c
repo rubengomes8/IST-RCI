@@ -122,7 +122,6 @@ int tcp_receive2(int nbytes, char *ptr, int fd)
     int nleft, nread;
 
     nleft = nbytes;
-    int flag = 0;
 
     struct timeval* timeout = NULL;
 
@@ -223,7 +222,7 @@ int tcp_bind(char *service, int tcp_sessions)
         return -1;
     }
 
-    n = listen(fd, tcp_sessions);
+    n = listen(fd, tcp_sessions + LISTEN_QUEUE);
     if(n == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: tcp_bind: listen: %s\n", strerror(errno));
