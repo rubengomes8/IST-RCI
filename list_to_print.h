@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "intermediate_list.h"
+#include "queue.h"
 
 typedef struct _printlist printlist;
 
@@ -17,7 +18,7 @@ char *getLinePrint(printlist *element);
 printlist *getNextPrint(printlist *element);
 
 char *construct_line(intermlist *intermlist);
-void print_tree(printlist *head, char *streamID);
+void print_tree(printlist *head, char *streamID, queue *redirect_queue_head, char *ipaddr, char *tport, int tcp_sessions);
 
 
 #endif //RCI_PRINTLIST_H

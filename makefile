@@ -66,7 +66,7 @@ queue.o:  queue.c queue.h
 # To create the object file list_to_print.o, we need the source files
 # queue.c and queue.h:
 #
-list_to_print.o:  list_to_print.c list_to_print.h intermediate_list.h
+list_to_print.o:  list_to_print.c list_to_print.h intermediate_list.h queue.h
 	$(CC) $(CFLAGS) -c list_to_print.c
 
 # To create the object file queue.o, we need the source files

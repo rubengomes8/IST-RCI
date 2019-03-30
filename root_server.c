@@ -647,6 +647,34 @@ int receive_data_header(int *data_len, char *msg)
 }
 
 /////////////////////////////////// Monitorização da estrutura da árvore ///////////////////////////////////////////////
+queue *send_tq_to_1_son(char *ip, char *tport, int *fd_array, queue *redirect_queue_head, queue **redirect_queue_tail,
+        int *empty_redirect_queue, int index, queue *aux, int *tcp_occupied)
+{
+    char *msg = NULL;
+    int n;
+
+    msg = (char *)malloc(sizeof(char)*TQ_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    sprintf(msg, "TQ %s:%s\n", ip, tport);
+
+    n = tcp_send(strlen(msg), msg, fd_array[index]);
+
+    if(n == 0)
+    {
+        redirect_queue_head = lost_son(aux, fd_array, index, tcp_occupied, redirect_queue_head, redirect_queue_tail,
+                                       empty_redirect_queue, NULL, 1);
+    }
+    free(msg);
+    return redirect_queue_head;
+
+}
+
+
 queue* send_tree_query(char *ip, char *tport, int *fd_array, int tcp_sessions, int *tcp_occupied, queue *redirect_queue_head,
         queue **redirect_queue_tail, int *empty_redirect_queue)
 {
@@ -758,6 +786,8 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
         return 0;
     }
 
+    if(flag_d) printf("Mensiagem enviada ao par a jusante: %s\n", msg);
+
     free(msg);
     return 1;
 }
@@ -815,6 +845,8 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
         return 0;
     }
 
+    if(flag_d) printf("Mensiagem enviada ao par a jusante: %s\n", msg);
+
     free(msg);
     return 1;
 
@@ -862,7 +894,7 @@ queue* root_send_tree_query(queue *redirect_queue_head, queue **redirect_queue_t
     }
 
 
-
+    free(msg);
     return redirect_queue_head;
 }
 

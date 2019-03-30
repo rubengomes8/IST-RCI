@@ -54,18 +54,16 @@ intermlist *newElementInterm(char *ip, char *port, int tcp_sessions)
 }
 
 //Retorna a nova tail
-intermlist *insertTailInterm(char *ip, char *port, int tcp_sessions, intermlist *tail)
+void insertTailInterm(char *ip, char *port, int tcp_sessions, intermlist **tail)
 {
     intermlist *new_element = NULL;
 
-    if(tail == NULL) return NULL;
+    if(*tail == NULL) return;
 
     new_element = newElementInterm(ip, port, tcp_sessions);
-    if(new_element == NULL) return NULL;
+    if(new_element == NULL) return;
 
-    tail->next = new_element;
-
-    return new_element;
+    (*tail)->next = new_element;
 }
 
 
@@ -164,7 +162,7 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
 }
 
 intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *ptr, int *fd_array, int tcp_sessions, int *tcp_occupied, queue **redirect_queue_head,
-        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing)
+        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing, intermlist **interm_tail, int index, queue *aux)
 {
 	char *token = NULL;
 	char ip[IP_LEN+1];
@@ -187,14 +185,19 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
         return NULL;
     }
     strcpy(port, token);
-    token == NULL;
-
-    *redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head,
-            redirect_queue_tail, empty_redirect_queue);
-   	*missing++;
+    token = NULL;
 
 
-    interm_list = insertTailInterm(ip, port, -1, interm_list);
+
+    *redirect_queue_head = send_tq_to_1_son(ip, port, fd_array, *redirect_queue_head, redirect_queue_tail, empty_redirect_queue,
+            index, aux, tcp_occupied);
+    //*redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head,
+       //     redirect_queue_tail, empty_redirect_queue);
+    (*missing)++;
+
+
+
+    insertTailInterm(ip, port, -1, interm_tail);
 
     return interm_list;
 }

@@ -79,6 +79,8 @@ int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions);
 int send_pop_reply(int query_id, int avails, char *ip, char *port, int fd);
 
 //Monitorização da estrutura da árvore de escoamento
+queue *send_tq_to_1_son(char *ip, char *tport, int *fd_array, queue *redirect_queue_head, queue **redirect_queue_tail,
+                        int *empty_redirect_queue, int index, queue *aux, int *tcp_occupied);
 queue* send_tree_query(char *ip, char *tport, int *fd_array, int tcp_sessions, int *tcp_occupied, queue *redirect_queue_head,
                        queue **redirect_queue_tail, int *empty_redirect_queue);
 int receive_tree_query(char *ptr, char *ip, char *tport);

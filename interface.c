@@ -94,30 +94,25 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int missing = 0;
 
     struct _intermlist **interm_list = NULL;
+    struct _intermlist **interm_tail = NULL;
+
+    interm_tail = (struct _intermlist **)malloc(sizeof(struct _intermlist*)*tcp_sessions);
+    if(interm_tail == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        return;
+    }
+
 
     interm_list = (struct _intermlist **)malloc(sizeof(struct _intermlist*)*tcp_sessions);
     if(interm_list == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
-        free(interm_list);
+        free(interm_tail);
         return;
     }
 
-    for(i = 0; i<tcp_sessions; i++)
-    {
-        interm_list[i] = NULL;
-        interm_list[i] = (struct _intermlist *)malloc(sizeof(int)+(IP_LEN+1)*sizeof(char)+(PORT_LEN+1)*sizeof(char)+sizeof(struct _intermlist*));
-        if(interm_list[i] == NULL)
-        {
-            for(j = 0; j<i; j++)
-            {
-                free(interm_list[i]);
-            }
-            free(interm_list);
-            if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
-            return;
-        }   
-    }
+    for(i = 0; i<tcp_sessions; i++) interm_list[i] = NULL;
 
     int *waiting_tr = NULL;
 
@@ -125,6 +120,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     if(waiting_tr == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        free(interm_list);
+        free(interm_tail);
+        return;
     }
     for(i = 0; i<tcp_sessions; i++) waiting_tr[i] = 0;
     
@@ -415,11 +413,13 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             if(flag_d && waiting_tr[i] != 1) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             //Receber o tree reply
 
-
+                            printf("WAITITN TR %d\n", waiting_tr[i]);
                             //está a receber o header, por isso vai construir o primeiro nó
                             if(waiting_tr[i] != 1)
                             {
+                                printf("HEADER\n");
                                 interm_list[i] = construct_interm_list_header(interm_list[i], aux_buffer_sons[i]);
+                                interm_tail[i] = interm_list[i];
                                 if(interm_list[i] == NULL)
                                 {
                                     redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
@@ -434,10 +434,11 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 aux_ptr_sons[i] = aux_buffer_sons[i];
                                 buffer[0] = '\0';
                                 nread_sons[i] = 0;
+
+                                waiting_tr[i] = 1;
                             }
 
-                            waiting_tr[i] = 1;
-                            missing--;
+
 
                             while(1)
                             {
@@ -489,6 +490,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     //Vai pegar no interm_list[i] e adicionar um nó à lista print_list
                                     if(head_print == NULL)
                                     {
+                                        printf("PRINT HEAD\n");
                                         line = construct_line(interm_list[i]);
                                         head_print = newElementPrint(line);
                                         tail_print = head_print;
@@ -496,6 +498,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     }
                                     else
                                     {
+                                        printf("TESTE\n");
                                         line = construct_line(interm_list[i]);
                                         tail_print = insertTailPrint(line, tail_print);
                                         free(line);
@@ -503,13 +506,20 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
                                     //Fazer free da interm_list[i]
                                     freeIntermList(interm_list[i]);
+                                    interm_list[i] = NULL;
+                                    interm_tail[i] = NULL;
 
+
+
+                                    missing--;
                                     // Verifica se foi o úlitmo TR que necessitava de receber. Caso for imprime a lista
                                     if(missing == 0)
                                     {
-                                        print_tree(head_print, streamID);
+                                        print_tree(head_print, streamID, redirect_queue_head, ipaddr, tport, tcp_sessions);
                                         freePrintList(head_print);
+                                        head_print = NULL;
                                     }
+
 
 
                                     waiting_tr[i] = 0;
@@ -522,9 +532,11 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 }
                                 else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                                 {
+                                    printf("NODES\n");
                                     interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array,
                                             tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail,
-                                            &empty_redirect_queue, &missing);
+                                            &empty_redirect_queue, &missing, &interm_tail[i], i, aux);
+
 
                                     aux_buffer_sons[i][0] = '\0';
                                     aux_ptr_sons[i] = aux_buffer_sons[i];
@@ -801,6 +813,13 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                 free(aux_buffer_sons);
                 free(aux_ptr_sons);
                 free(nread_sons);
+                free(waiting_tr);
+                for(i = 0; i<tcp_sessions; i++)
+                {
+                     freeIntermList(interm_list[i]);
+                }
+                free(interm_list);
+                free(interm_tail);
                 return;
             }
         }
@@ -1955,13 +1974,13 @@ int buffer_interm_sons(char ***aux_ptr_sons, char ***aux_buffer_sons, int** nrea
 
     for(i = 0; i<tcp_sessions; i++)
     {
-        *aux_buffer_sons[i] = NULL;
-        *aux_buffer_sons[i] = (char *)malloc(sizeof(char)*SONS_BUFFER);
-        if(*aux_buffer_sons[i] == NULL)
+        (*aux_buffer_sons)[i] = NULL;
+        (*aux_buffer_sons)[i] = (char *)malloc(sizeof(char)*SONS_BUFFER);
+        if((*aux_buffer_sons)[i] == NULL)
         {
             for(j = 0; j<i; j++)
             {
-                free(*aux_buffer_sons[j]);
+                free((*aux_buffer_sons)[j]);
             }
             free(*aux_buffer_sons);
             free(*aux_ptr_sons);
@@ -1969,8 +1988,8 @@ int buffer_interm_sons(char ***aux_ptr_sons, char ***aux_buffer_sons, int** nrea
             return -1;
         }
         //aux_buffer_sons[i] = '\0';
-        strcpy(*aux_buffer_sons[i], "\0");
-        *aux_ptr_sons[i] = *aux_buffer_sons[i];
+        strcpy((*aux_buffer_sons)[i], "\0");
+        (*aux_ptr_sons)[i] = (*aux_buffer_sons)[i];
     }
 
     *nread_sons = (int *)malloc(sizeof(int)*tcp_sessions);
@@ -1979,7 +1998,7 @@ int buffer_interm_sons(char ***aux_ptr_sons, char ***aux_buffer_sons, int** nrea
         if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
         for(i = 0; i<tcp_sessions; i++)
         {
-            free(*aux_buffer_sons[i]);
+            free((*aux_buffer_sons)[i]);
         }
         free(*aux_buffer_sons);
         free(*aux_ptr_sons);
@@ -1988,7 +2007,7 @@ int buffer_interm_sons(char ***aux_ptr_sons, char ***aux_buffer_sons, int** nrea
 
     for(i = 0; i<tcp_sessions; i++)
     {
-        *nread_sons[i] = 0;
+        (*nread_sons)[i] = 0;
     }
 
     return 0;
