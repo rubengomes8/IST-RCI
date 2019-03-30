@@ -776,7 +776,7 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
         if(flag_d) fprintf(stderr, "Erro: send_tree_query: malloc: %s\n", strerror(errno));
         exit(1);
     }
-
+    msg[0] = '\0';
     strcpy(msg, ptr);
 
     while(1)
@@ -793,6 +793,7 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
         }
         else
         {
+            ptr[n] = '\0';
             strcat(msg, ptr);
             if(ptr[0] == '\n')
                 break;

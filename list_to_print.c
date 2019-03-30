@@ -98,18 +98,27 @@ char *construct_line(intermlist *intermlist)
 	struct _intermlist *aux = intermlist;
 	char *msg = NULL;
 	tcp_sessions = getTcpSessionsInterm(aux);
-	char tcp_sessions_str[4];
+	char *tcp_sessions_str = NULL;
 
-	msg = (char*)malloc(sizeof(char)*(28+21*tcp_sessions)); //15+1+5+1+5+1+21*tcp_sessions = 28+21*tcp_sessions
+
+	tcp_sessions_str = (char*)malloc(sizeof(char)*(tcp_sessions/10 + 2));
+	if(tcp_sessions_str == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: construct_line: malloc: %s\n", strerror(errno));
+        return NULL;
+    }
+
+	msg = (char*)malloc(sizeof(char)*(25 + tcp_sessions/10 + 1 + 22*tcp_sessions + 2)); //15+1+5+1+5+1+21*tcp_sessions = 28+21*tcp_sessions
     if(msg == NULL)
     {
         if(flag_d) fprintf(stderr, "Erro: construct_line: malloc: %s\n", strerror(errno));
         return NULL;
     }
 
+    msg[0] = '\0';
     strcpy(msg, getIPInterm(aux));
     strcat(msg, ":");
-    strcpy(msg, getPORTInterm(aux));
+    strcat(msg, getPORTInterm(aux));
     strcat(msg, " (");
     sprintf(tcp_sessions_str, "%d", tcp_sessions);
     strcat(msg, tcp_sessions_str);
@@ -120,9 +129,9 @@ char *construct_line(intermlist *intermlist)
     	while(aux != NULL)
 	    {
 	    	strcat(msg, " ");
-	    	strcpy(msg, getIPInterm(aux));
+	    	strcat(msg, getIPInterm(aux));
 		    strcat(msg, ":");
-		    strcpy(msg, getPORTInterm(aux));
+		    strcat(msg, getPORTInterm(aux));
 	    	aux=getNextInterm(aux);
 	    }
 
@@ -134,6 +143,7 @@ char *construct_line(intermlist *intermlist)
     }
     strcat(msg, ")\n");
 
+    free(tcp_sessions_str);
 	return msg;
 }
 
@@ -144,5 +154,6 @@ void print_tree(printlist *head, char *streamID)
 	while(aux != NULL)
 	{
 		printf("%s", getLinePrint(aux));
+		aux = getNextPrint(aux);
 	}
 }

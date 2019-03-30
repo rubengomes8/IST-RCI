@@ -12,14 +12,18 @@
     <list default="true" id="1cbc23ac-d573-4c7e-8c02-2d8876fde908" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iamroot" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iamroot.o" beforeDir="false" afterPath="$PROJECT_DIR$/iamroot.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.c" beforeDir="false" afterPath="$PROJECT_DIR$/interface.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/interface.h" beforeDir="false" afterPath="$PROJECT_DIR$/interface.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interface.o" beforeDir="false" afterPath="$PROJECT_DIR$/interface.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intermediate_list.o" beforeDir="false" afterPath="$PROJECT_DIR$/intermediate_list.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/list_to_print.c" beforeDir="false" afterPath="$PROJECT_DIR$/list_to_print.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/list_to_print.o" beforeDir="false" afterPath="$PROJECT_DIR$/list_to_print.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/queue.o" beforeDir="false" afterPath="$PROJECT_DIR$/queue.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/root_server.c" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/root_server.h" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/root_server.o" beforeDir="false" afterPath="$PROJECT_DIR$/root_server.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tcp.c" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tcp.o" beforeDir="false" afterPath="$PROJECT_DIR$/tcp.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/udp.o" beforeDir="false" afterPath="$PROJECT_DIR$/udp.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.o" beforeDir="false" afterPath="$PROJECT_DIR$/utils.o" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -41,8 +45,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/root_server.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="461">
-              <caret line="476" column="69" selection-start-line="476" selection-start-column="69" selection-end-line="476" selection-end-column="69" />
+            <state relative-caret-position="499">
+              <caret line="792" column="9" lean-forward="true" selection-start-line="792" selection-start-column="9" selection-end-line="792" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -83,20 +87,20 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/interface.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="399">
-              <caret line="87" lean-forward="true" selection-start-line="87" selection-end-line="87" />
+            <state relative-caret-position="442">
+              <caret line="491" column="51" selection-start-line="491" selection-start-column="51" selection-end-line="491" selection-end-column="51" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/utils.c">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/list_to_print.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="281">
-              <caret line="364" selection-start-line="364" selection-end-line="364" />
+            <state relative-caret-position="399">
+              <caret line="108" column="5" selection-start-line="108" selection-start-column="5" selection-end-line="108" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -113,7 +117,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tcp.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="228">
+            <state relative-caret-position="-1311">
               <caret line="75" column="45" selection-start-line="75" selection-start-column="45" selection-end-line="75" selection-end-column="45" />
             </state>
           </provider>
@@ -123,12 +127,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>pop_query</find>
-      <find>receive_tree</find>
-      <find>send_tree</find>
-      <find>pop_query_peer</find>
-      <find>send_tree_query</find>
-      <find>n = readesao</find>
       <find>get_acc</find>
       <find>interface_root</find>
       <find>lost_son</find>
@@ -153,6 +151,12 @@
       <find>receive_data_root</find>
       <find>ptr</find>
       <find>newpop</find>
+      <find>root_</find>
+      <find>HEAD</find>
+      <find>print_tree</find>
+      <find>receive_tree_repl</find>
+      <find>newEle</find>
+      <find>receive_tree_reply</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -177,6 +181,7 @@
         <option value="$PROJECT_DIR$/tcp.c" />
         <option value="$PROJECT_DIR$/root_server.c" />
         <option value="$PROJECT_DIR$/interface.c" />
+        <option value="$PROJECT_DIR$/list_to_print.c" />
       </list>
     </option>
   </component>
@@ -242,12 +247,12 @@
       <workItem from="1551995450083" duration="18729000" />
       <workItem from="1552053989399" duration="104351000" />
       <workItem from="1553188841755" duration="48456000" />
-      <workItem from="1553786803458" duration="23948000" />
+      <workItem from="1553786803458" duration="31456000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="257636000" />
+    <option name="totallyTimeSpent" value="265144000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -393,22 +398,29 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tcp.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="228">
+        <state relative-caret-position="-1311">
           <caret line="75" column="45" selection-start-line="75" selection-start-column="45" selection-end-line="75" selection-end-column="45" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/root_server.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="461">
-          <caret line="476" column="69" selection-start-line="476" selection-start-column="69" selection-end-line="476" selection-end-column="69" />
+        <state relative-caret-position="499">
+          <caret line="792" column="9" lean-forward="true" selection-start-line="792" selection-start-column="9" selection-end-line="792" selection-end-column="9" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/interface.c">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="442">
+          <caret line="491" column="51" selection-start-line="491" selection-start-column="51" selection-end-line="491" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/list_to_print.c">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="399">
-          <caret line="87" lean-forward="true" selection-start-line="87" selection-end-line="87" />
+          <caret line="108" column="5" selection-start-line="108" selection-start-column="5" selection-end-line="108" selection-end-column="5" />
         </state>
       </provider>
     </entry>
