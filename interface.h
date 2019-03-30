@@ -11,6 +11,8 @@
 #define POP_QUERY_TIMEOUT 10
 #define SONS_BUFFER 256
 
+#define TIMEOUT_SELECT 1
+
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
         queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport);

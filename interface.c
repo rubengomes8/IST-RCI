@@ -88,13 +88,24 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
      //////////////////////////////////////////
     struct _printlist *head_print = NULL;
-    struct _printlist *aux_print = NULL;
     struct _printlist *tail_print = NULL;
     char *line;
     int missing = 0;
 
     struct _intermlist **interm_list = NULL;
     struct _intermlist **interm_tail = NULL;
+
+    struct timeval* timeout = NULL;
+
+    timeout = (struct timeval *)malloc(sizeof(struct timeval));
+    if(timeout == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        return;
+    }
+
+    timeout->tv_sec = TIMEOUT_SELECT;
+    timeout->tv_usec = 0;
 
     interm_tail = (struct _intermlist **)malloc(sizeof(struct _intermlist*)*tcp_sessions);
     if(interm_tail == NULL)
@@ -413,11 +424,9 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                             if(flag_d && waiting_tr[i] != 1) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
                             //Receber o tree reply
 
-                            printf("WAITITN TR %d\n", waiting_tr[i]);
                             //está a receber o header, por isso vai construir o primeiro nó
                             if(waiting_tr[i] != 1)
                             {
-                                printf("HEADER\n");
                                 interm_list[i] = construct_interm_list_header(interm_list[i], aux_buffer_sons[i]);
                                 interm_tail[i] = interm_list[i];
                                 if(interm_list[i] == NULL)
@@ -490,7 +499,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     //Vai pegar no interm_list[i] e adicionar um nó à lista print_list
                                     if(head_print == NULL)
                                     {
-                                        printf("PRINT HEAD\n");
                                         line = construct_line(interm_list[i]);
                                         head_print = newElementPrint(line);
                                         tail_print = head_print;
@@ -498,7 +506,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                     }
                                     else
                                     {
-                                        printf("TESTE\n");
                                         line = construct_line(interm_list[i]);
                                         tail_print = insertTailPrint(line, tail_print);
                                         free(line);
@@ -1658,6 +1665,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
     int fd_ss = -1;
     char *msg_readesao = NULL;
     char buffer_readesao[BUFFER_SIZE];
+    int n;
 
     //Envia broken stream
     *redirect_queue_head = send_broken_stream_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
@@ -1718,7 +1726,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                 {
                     //falha na comunicação com o servidor de acessos. Podes significar que a raiz saiu
                     //Vamos tentar uma nova readesão
-                    n =readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
+                    n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
                             fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs);
 
