@@ -64,6 +64,8 @@ void insertTailInterm(char *ip, char *port, int tcp_sessions, intermlist **tail)
     if(new_element == NULL) return;
 
     (*tail)->next = new_element;
+
+    *tail = new_element;
 }
 
 

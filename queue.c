@@ -66,6 +66,20 @@ queue *insertTail(char *ip, char *port, int available_sessions, int index, queue
     return new_element;
 }
 
+queue *insertHead(char *ip, char *port, int available_sessions, int index, queue *head)
+{
+    queue *new_element = NULL;
+
+    if(head == NULL) return NULL;
+
+    new_element = newElement(ip, port, available_sessions, index);
+    if(new_element == NULL) return NULL;
+
+    new_element->next = head;
+
+    return new_element;
+}
+
 void freeQueue(queue *head)
 {
     queue *aux;

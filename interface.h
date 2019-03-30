@@ -11,11 +11,10 @@
 #define POP_QUERY_TIMEOUT 10
 #define SONS_BUFFER 256
 
-#define TIMEOUT_SELECT 1
-
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
-        queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport);
+        queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue, int tsecs, char *rsaddr,
+        char *rsport, char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing);
 void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char *streamIP, char *streamPORT,
         int *is_root, char* ipaddr, char *uport, char *tport, int tcp_sessions, int tcp_occupied, int fd_tcp_server,
         int *fd_array, int bestpops, int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport, int tsecs);
@@ -26,16 +25,17 @@ queue *receive_newpop(queue *redirect_queue_head, queue **redirect_queue_tail, i
 queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpops, queue *redirect_queue_head, queue **redirect_queue_tail,
         int *tcp_occupied, int *empty_redirect_queue);
 queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
-        int *received_pops, int waiting_pop_reply, int *correct_info);
+        int *received_pops, int waiting_pop_reply, int *correct_info, int* insert_tail);
 int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport,
              queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
              int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
-             char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs);
+             char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs,
+             char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken);
 int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_queue_head, queue **redirect_queue_tail,
                       int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied);
 queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,
                       queue **redirect_queue_tail, int *empty_redirect_queue);
-queue *send_is_flowing_broken(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
+queue *send_is_flowing(int is_flowing, int *fd_array, int index, int *tcp_occupied, queue *redirect_queue_head,
                        queue *element, queue **redirect_queue_tail, queue *previous, int *empty_redirect_queue,
                        int remove_by_index);
 queue *send_broken_stream_to_all(int *fd_array, int *tcp_occupied, queue *redirect_queue_head, queue **redirect_queue_tail,

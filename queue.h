@@ -10,6 +10,7 @@ typedef struct _queue queue;
 
 queue *newElement(char *ip, char *port, int available_sessions, int index);
 queue *insertTail(char *ip, char *port, int available_sessions, int index, queue *tail);
+queue *insertHead(char *ip, char *port, int available_sessions, int index, queue *head);
 void freeQueue(queue *head);
 void freeElement(queue *element);
 char *getIP(queue *element);
