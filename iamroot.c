@@ -96,8 +96,6 @@ int main(int argc, char *argv[])
     char **aux_ptr_sons = NULL;
     int *nread_sons = NULL;
 
-    struct timeval *timeout = NULL;
-
     //Lê e verifica os restantes argumentos
     has_stream = arguments_reading(argc, argv, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops,
             &tsecs, &flag_h, streamID, streamNAME, streamIP, streamPORT);
@@ -169,7 +167,7 @@ int main(int argc, char *argv[])
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_ss, fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
                         fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1, tsecs, rsaddr, rsport,
-                        aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, timeout);
+                        aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
