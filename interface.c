@@ -1750,7 +1750,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
             //Envia SF
             *redirect_queue_head = send_stream_flowing_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
                     empty_redirect_queue);
-	    *is_flowing = 1;
+	        *is_flowing = 1;
 		
             //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
             interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
