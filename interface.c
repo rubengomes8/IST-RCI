@@ -987,6 +987,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
     aux_buffer_dad[0] = '\0';
 
+    int data_to_read = 0;
+
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -1010,6 +1012,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 if(n == 1)
                 {
                     free(timeout);
+                    free(aux_buffer_dad);
                     return;
                 }
                 flowing_reference = time(NULL);
@@ -1179,6 +1182,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         if(n == 1)
                                         {
                                             free(timeout);
+                                            free(aux_buffer_dad);
                                             return;
                                         }
                                         flowing_reference = time(NULL);
@@ -1221,6 +1225,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 if(n == 1)
                                 {
                                     free(timeout);
+                                    free(aux_buffer_dad);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1247,17 +1252,21 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
         //Par TCP a montante
         if(FD_ISSET(fd_pop, &fd_read_set))
         {
-            ptr = msg;
-            n = tcp_receive(MAX_BYTES, ptr, fd_pop);
+            //ptr = msg;
+            //n = tcp_receive(MAX_BYTES, ptr, fd_pop);
+
+            if(data_to_read == 0)
+            {
+                aux_ptr_dad = aux_buffer_dad;
+                nread_dad = tcp_receive2(DADS_BUFFER - nread_dad -1, aux_ptr_dad, fd_pop);
+                aux_ptr_dad += nread_dad;
+                aux_buffer_dad[nread_dad] = '\0';
+            }
 
 
-           /* aux_ptr_dad = aux_buffer_dad;
-            nread_dad = tcp_receive2(DADS_BUFFER - nread_dad -1, aux_ptr_dad, fd_pop);
-            aux_ptr_dad += nread_dad;*/
 
 
-
-            if(n == 0)
+            if(nread_dad == 0 && data_to_read == 0)
             {
                 //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                 if(flag_d) printf("Perdida a ligação ao par a montante...\n");
@@ -1272,27 +1281,40 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 if(n == 1)
                 {
                     free(timeout);
+                    free(aux_buffer_dad);
                     return;
                 }
                 flowing_reference = time(NULL);
             }
-            else
+            else if((nread_dad != 0 && aux_buffer_dad[nread_dad - 1] == '\n') || data_to_read > 0)
             {
                 //Coloca um \0 no fim da mensagem recebida
                 //Se n fosse igual a MAX_BYTES estariamos a apagar o ultimo carater recebido
-                if(n < MAX_BYTES)
+               /* if(n < MAX_BYTES)
                 {
                     *(ptr + n - 1) = '\0';
-                }
+                }*/
 
                 //Copia os 2 primeiros caracteres de msg para buffer
-                strncpy(buffer, msg, 2);
-                buffer[2] = '\0';
+                if(data_to_read == 0)
+                {
+                    strncpy(buffer, aux_buffer_dad, 2);
+                    buffer[2] = '\0';
+                }
 
-                if(!strcmp("DA", buffer))
+                if(!strcmp("DA", buffer) || data_to_read > 0)
                 {
                     //Recebe o header da mensagem
-                    n = receive_data_header(&data_len, msg);
+                    if(data_to_read == 0)
+                    {
+                        n = receive_data_header(&data_len, aux_buffer_dad);
+                    }
+                    else
+                    {
+                        n = 0;
+                    }
+
+
                     if(n == -1)
                     {
                         if(flag_d) printf("Erro no encapsulamento da mensagem\n");
@@ -1300,7 +1322,38 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                     }
                     if(n != -1)
                     {
-                        data = (char *)malloc(sizeof(char)*(data_len+1));
+                        aux_buffer_dad[0] = '\0';
+                        aux_ptr_dad = aux_buffer_dad;
+                        nread_dad = 0;
+                        buffer[0] = '\0';
+
+
+                        if(data_to_read > 0)
+                        {
+                            data_len = data_to_read;
+                        }
+
+                        //quantidade de bytes de dados para ler fica em data_to_read
+                        //data_len fica com a quantidade a ler agora
+                        if(data_len > DADS_BUFFER - 1)
+                        {
+                            data_to_read = data_len;
+                            data_len = DADS_BUFFER - 1;
+                        }
+                        else
+                        {
+                            data_to_read = data_len;
+                        }
+
+                        //Depois da leitura decrementa-se à quantidade de dados para ler, o número de dados lido
+                        nread_dad = read(fd_pop, aux_buffer_dad, data_len);
+                        data_to_read -= nread_dad;
+                        aux_ptr_dad += nread_dad;
+
+
+
+
+                        /*data = (char *)malloc(sizeof(char)*(data_len+1));
                         if(data == NULL)
                         {
                             if(flag_d) printf("Erro: malloc: %s\n", strerror(errno));
@@ -1308,8 +1361,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         }
 
                         data_ptr = data;
-                        n = read(fd_pop, data, data_len);
-                        if(n == 0 || n == -1)
+                        n = read(fd_pop, data, data_len);*/
+                        if(nread_dad == 0 || nread_dad == -1)
                         {
                             //Perdeu-se a ligação ao par a montante, tentar entrar de novo
                             if(flag_d) printf("Perdida a ligação ao par a montante...\n");
@@ -1323,18 +1376,24 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             if(n == 1)
                             {
                                 free(timeout);
+                                free(aux_buffer_dad);
                                 return;
                             }
                             flowing_reference = time(NULL);
                         }
                         else
                         {
-                            data[n] = '\0';
-                            if(flag_b) printf("%s", data_ptr);
+                            aux_buffer_dad[nread_dad] = '\0';
+                            if(flag_b) printf("%s", aux_buffer_dad);
                             fflush(stdout);
 
 
-                            sprintf(msg, "DA %04X\n", data_len);
+
+                           /* data[n] = '\0';
+                            if(flag_b) printf("%s", data_ptr);
+                            fflush(stdout);*/
+
+                            sprintf(msg, "DA %04X\n", nread_dad);
                             ptr = msg;
 
                             //Retransmitir
@@ -1355,7 +1414,8 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                      //       getPORT(aux), msg);
 
 
-                                    n = tcp_send(data_len, data_ptr, fd_array[i]);
+                                   // n = tcp_send(data_len, data_ptr, fd_array[i]);
+                                    n = tcp_send(nread_dad, aux_buffer_dad, fd_array[i]);
                                     if(n == 0)
                                     {
                                         redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
@@ -1375,7 +1435,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         data = NULL;
                     }
 
-
+                    aux_buffer_dad[0] = '\0';
+                    aux_ptr_dad = aux_buffer_dad;
+                    nread_dad = 0;
+                    buffer[0] = '\0';
 
 
                 }
@@ -1399,6 +1462,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         if(n == 1)
                         {
                             free(timeout);
+                            free(aux_buffer_dad);
                             return;
                         }
                         flowing_reference = time(NULL);
@@ -1412,6 +1476,10 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                     }
 
                     flowing_reference = time(NULL);
+                    aux_buffer_dad[0] = '\0';
+                    aux_ptr_dad = aux_buffer_dad;
+                    nread_dad = 0;
+                    buffer[0] = '\0';
 
                 }
                 else if(!strcmp("SF", buffer))
@@ -1435,6 +1503,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         if(n == 1)
                         {
                             free(timeout);
+                            free(aux_buffer_dad);
                             return;
                         }
                         flowing_reference = time(NULL);
@@ -1445,13 +1514,18 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         redirect_queue_head = send_stream_flowing_to_all(fd_array, &tcp_occupied, redirect_queue_head, &redirect_queue_tail,
                                                                          &empty_redirect_queue);
                     }
+
+                    aux_buffer_dad[0] = '\0';
+                    aux_ptr_dad = aux_buffer_dad;
+                    nread_dad = 0;
+                    buffer[0] = '\0';
                 }
                 else if(!strcmp("PQ", buffer))
                 {
-                    if(flag_d) printf("Mensagem recebida do par a montante: %s\n", ptr);
+                    if(flag_d) printf("Mensagem recebida do par a montante: %s\n", aux_buffer_dad);
                     //Retornar os pontos ip:port e o número de pontos de acessos disponíveis aqui
                     //Se não tiver suficientes fazer pop_query ele próprio
-                    n = receive_pop_query(ptr, &requested_pops, &query_id); //Verifica quantos pops lhe foram pedidos e qual o queryID associado
+                    n = receive_pop_query(aux_buffer_dad, &requested_pops, &query_id); //Verifica quantos pops lhe foram pedidos e qual o queryID associado
 
                     if(n != -1)
                     {
@@ -1473,6 +1547,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 if(n == 1)
                                 {
                                     free(timeout);
+                                    free(aux_buffer_dad);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1528,11 +1603,16 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         }
                     }
 
+                    aux_buffer_dad[0] = '\0';
+                    aux_ptr_dad = aux_buffer_dad;
+                    nread_dad = 0;
+                    buffer[0] = '\0';
+
                 }
                 else if(!strcmp("TQ", buffer))               
                 {                   
-                    if(flag_d) printf("Mensagem recebida do par a montante: %s\n", ptr);
-                    n = receive_tree_query(ptr, treequery_ip, treequery_port);
+                    if(flag_d) printf("Mensagem recebida do par a montante: %s\n", aux_buffer_dad);
+                    n = receive_tree_query(aux_buffer_dad, treequery_ip, treequery_port);
 
                     if(n != -1)
                     {
@@ -1555,6 +1635,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 if(n == 1)
                                 {
                                     free(timeout);
+                                    free(aux_buffer_dad);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1574,11 +1655,16 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         printf("Mensagem Tree Query inválida!\n\n");
                     }
 
+                    aux_buffer_dad[0] = '\0';
+                    aux_ptr_dad = aux_buffer_dad;
+                    nread_dad = 0;
+                    buffer[0] = '\0';
+
                 }
             }
-            ptr = NULL;
+            /*ptr = NULL;
             msg[0] = '\0';
-            buffer[0] = '\0';
+            buffer[0] = '\0';*/
         }
 
         if(FD_ISSET(0, &fd_read_set))
@@ -1596,6 +1682,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 }
                 free(aux_buffer_sons);
                 free(timeout);
+                free(aux_buffer_dad);
                 return;
             }
         }

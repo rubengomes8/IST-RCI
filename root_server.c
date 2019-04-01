@@ -786,7 +786,7 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
         return 0;
     }
 
-    if(flag_d) printf("Mensiagem enviada ao par a jusante: %s\n", msg);
+    if(flag_d) printf("Mensagem enviada ao par a jusante: %s\n", msg);
 
     free(msg);
     return 1;
@@ -845,7 +845,7 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
         return 0;
     }
 
-    if(flag_d) printf("Mensiagem enviada ao par a jusante: %s\n", msg);
+    if(flag_d) printf("Mensagem enviada ao par a jusante: %s\n", msg);
 
     free(msg);
     return 1;

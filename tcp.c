@@ -70,7 +70,7 @@ int tcp_send(int nbytes, char *ptr, int fd)
   {
     //Envia o número de bytes que faltam. Recebe o número de bytes enviado com sucesso
     nwritten = write(fd, ptr, nleft);
-    //  nwritten = write(fd, ptr, 1);
+    // nwritten = write(fd, ptr, 1);
     if(nwritten == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: tcp_send: write: %s\n", strerror(errno));
@@ -79,6 +79,8 @@ int tcp_send(int nbytes, char *ptr, int fd)
 
     nleft -= nwritten;
     ptr += nwritten; //incremento do ponteiro até ao primeiro caracter não enviado
+
+    //sleep(0.5);
   }
 
   return nwritten; //success
