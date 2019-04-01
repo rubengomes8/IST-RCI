@@ -78,10 +78,10 @@ query_list *getNextQuery(query_list *element)
     return element->next;
 }
 
-void decrementBestPops(query_list *element)
+void decreaseBestPops(query_list *element, int received_pops)
 {
     if(element == NULL) return;
-    (element->bestpops)--;
+    (element->bestpops) -= received_pops;
 }
  
 query_list *getElementById(query_list *head, query_list **previous, int id)

@@ -18,7 +18,7 @@ extern int ascii;
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
         queue *redirect_queue_tail, queue *redirect_aux, int empty_redirect_queue, int tsecs, char *rsaddr, char *rsport,
-        char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing)
+        char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing, int query_id)
 {
     //Variáveis para o select
     int maxfd, counter;
@@ -28,7 +28,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     int exit_flag = 0;
 
     //PQ/PR
-    int query_id = 0;
     int waiting_pop_reply = 0;
     int received_pops = 0;
 
@@ -82,6 +81,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     //Nó auxiliar relativo a um par a jusante
     queue *aux = NULL;
+    queue *pops_aux = NULL;
 
      //////////////////////////////////////////
     struct _printlist *head_print = NULL;
@@ -162,6 +162,15 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     int refuse_fd = -1;
 
+    query_list *head_pop_query_list = NULL;
+    query_list *tail_pop_query_list = NULL;
+    query_list *current_pop_query_list = NULL;
+    query_list *previous_pop_query_list = NULL;
+
+    int query_id_rcvd = 0;
+    char ip_pop[IP_LEN + 1];
+    char port_pop[PORT_LEN + 1];
+    int available_sessions = 0;
 
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
@@ -226,12 +235,25 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
         }
         if(now - reference_time_pop_query >= POP_QUERY_TIMEOUT && tcp_occupied > 0)
         {
-            query_id++;
-            redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                  &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-            //está à espera da resposta do pop_query
-            waiting_pop_reply = 1;
-            received_pops = 0;
+            if(redirect_queue_head != NULL)
+            {
+                query_id++;
+                redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                      &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                //está à espera da resposta do pop_query
+                waiting_pop_reply = 1;
+
+                if(head_pop_query_list == NULL)
+                {
+                    head_pop_query_list = newElementQuery(query_id, bestpops);
+                    tail_pop_query_list = head_pop_query_list;
+                }
+                else
+                {
+                    insertTailQuery(query_id, bestpops, &tail_pop_query_list);
+                }
+            }
+
 
            /* if(redirect_queue_head == NULL)
             {
@@ -368,12 +390,28 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
 
 
+                                if(waiting_pop_reply == 0)
+                                {
+                                    if(redirect_queue_head != NULL)
+                                    {
+                                        query_id++;
+                                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                                              &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                                        //está à espera da resposta do pop_query
+                                        waiting_pop_reply = 1;
 
-                                query_id++;
-                                redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                                      &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                                //está à espera da resposta do pop_query
-                                waiting_pop_reply = 1;
+                                        if(head_pop_query_list == NULL)
+                                        {
+                                            head_pop_query_list = newElementQuery(query_id, bestpops);
+                                            tail_pop_query_list = head_pop_query_list;
+                                        }
+                                        else
+                                        {
+                                            insertTailQuery(query_id, bestpops, &tail_pop_query_list);
+                                        }
+                                    }
+                                }
+
                             }
                             else
                             {
@@ -410,30 +448,75 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                         else if(!strcmp("PR", buffer))
                         {
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
-                            pops_queue_head = get_data_pop_reply(pops_queue_head, &pops_queue_tail, aux_buffer_sons[i], &empty_pops_queue,
-                                    query_id, &received_pops, waiting_pop_reply, &correct_info, &insert_tail);
 
-                            if(correct_info == -1)
+                            query_id_rcvd = receive_pop_reply(aux_buffer_sons[i], ip_pop, port_pop, &available_sessions);
+
+                            if(query_id_rcvd != -1)
                             {
-                                if(flag_d) printf("Mensagem Pop Reply mal formatada\n");
-                                if(flag_d) printf("O par que enviou a mensagem será desconectado\n");
+                                current_pop_query_list = getElementById(head_pop_query_list, &previous_pop_query_list, query_id_rcvd);
 
-                                redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
-                                        &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
+                                if(current_pop_query_list != NULL)
+                                {
+                                    if(getBestPopsQuery(current_pop_query_list) > 0) //Se tiver pops por receber
+                                    {
+                                        waiting_pop_reply = 0;
+
+                                        decreaseBestPops(current_pop_query_list, available_sessions);
+
+                                        if(getBestPopsQuery(current_pop_query_list) <= 0)
+                                        {
+                                            removeElementQuery(previous_pop_query_list, current_pop_query_list,
+                                                    &head_pop_query_list, &tail_pop_query_list);
+
+                                            freeQueue(aux_pops_queue_head);
+                                            aux_pops_queue_aux = NULL;
+                                            aux_pops_queue_head = NULL;
+                                            aux_pops_queue_tail = NULL;
+                                            empty_aux_pops_queue = 1;
+                                        }
+
+
+                                        if(empty_pops_queue)
+                                        {
+                                            pops_queue_head = newElement(ip_pop, port_pop, available_sessions, -1);
+                                            pops_queue_tail = pops_queue_head;
+                                            empty_pops_queue = 0;
+                                        }
+                                        else
+                                        {
+                                            pops_aux = getElementByAddress(pops_queue_head, ip_pop, port_pop);
+
+                                            if(pops_aux != NULL)
+                                            {
+                                                setAvailable(pops_aux, available_sessions);
+                                            }
+                                            else
+                                            {
+                                                if(insert_tail)
+                                                {
+                                                    pops_queue_tail = insertTail(ip_pop, port_pop, available_sessions, -1, pops_queue_tail);
+                                                    insert_tail = 0;
+                                                }
+                                                else
+                                                {
+                                                    insert_tail = 1;
+                                                    pops_queue_head = insertHead(ip_pop, port_pop, available_sessions, -1, pops_queue_head);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if(flag_d) printf("Não existe nenhuma query associada ao query ID recebido\n");
+                                }
                             }
                             else
                             {
-                                //Liberta a lista de pops auxiliares, pois esta já não é precisa
-                                if(received_pops >= bestpops)
-                                {
-                                    waiting_pop_reply = 0;
-                                    received_pops = 0;
-                                    freeQueue(aux_pops_queue_head);
-                                    aux_pops_queue_aux = NULL;
-                                    aux_pops_queue_head = NULL;
-                                    aux_pops_queue_tail = NULL;
-                                    empty_aux_pops_queue = 1;
-                                }
+                                if(flag_d) printf("Mensagem Pop Reply mal formatada\n");
+                                if(flag_d) printf("O par que enviou a mensagem será desconectado\n");
+                                redirect_queue_head = lost_son(aux, fd_array, i, &tcp_occupied, redirect_queue_head,
+                                                               &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
                             }
 
                             aux_buffer_sons[i][0] = '\0';
@@ -665,25 +748,38 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                     //porquê tcp_sessions == tcp_occupied +1?
                     if(tcp_occupied > 0 && empty_pops_queue && waiting_pop_reply == 0)
                     {
-                        //faz pop_query
-                        query_id++;
-                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                              &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                        //está à espera da resposta do pop_query
-                        waiting_pop_reply = 1;
-
-                        if(redirect_queue_head == NULL)
+                        if(redirect_queue_head != NULL)
                         {
-                            //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                            empty_redirect_queue = 1;
-                            tcp_occupied = 0;
-                            for(i = 0; i<tcp_sessions; i++)
+                            //faz pop_query
+                            query_id++;
+                            redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                                  &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                            //está à espera da resposta do pop_query
+                            waiting_pop_reply = 1;
+
+                            if(redirect_queue_head == NULL)
                             {
-                                if(fd_array[i] != -1)
+                                //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                                empty_redirect_queue = 1;
+                                tcp_occupied = 0;
+                                for(i = 0; i<tcp_sessions; i++)
                                 {
-                                    close(fd_array[i]);
-                                    fd_array[i] = -1;
+                                    if(fd_array[i] != -1)
+                                    {
+                                        close(fd_array[i]);
+                                        fd_array[i] = -1;
+                                    }
                                 }
+                            }
+
+                            if(head_pop_query_list == NULL)
+                            {
+                                head_pop_query_list = newElementQuery(query_id, bestpops);
+                                tail_pop_query_list = head_pop_query_list;
+                            }
+                            else
+                            {
+                                insertTailQuery(query_id, bestpops, &tail_pop_query_list);
                             }
                         }
                     }
@@ -697,28 +793,46 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                     //se não tiver nenhum elemento na lista de pops
                     if(empty_pops_queue && tcp_occupied > 0)
                     {
-                        //faz pop_query
-                        query_id++;
-                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
-                                                              &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                        //está à espera da resposta do pop_query
-                        waiting_pop_reply = 1;
-                        received_pops = 0;
-
-                        if(redirect_queue_head == NULL)
+                        if(waiting_pop_reply == 0)
                         {
-                            //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                            empty_redirect_queue = 1;
-                            tcp_occupied = 0;
-                            for(i = 0; i<tcp_sessions; i++)
+                            if(redirect_queue_head != NULL)
                             {
-                                if(fd_array[i] != -1)
+                                //faz pop_query
+                                query_id++;
+                                redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops, redirect_queue_head,
+                                                                      &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                                //está à espera da resposta do pop_query
+                                waiting_pop_reply = 1;
+                                received_pops = 0;
+
+
+                                if(redirect_queue_head == NULL)
                                 {
-                                    close(fd_array[i]);
-                                    fd_array[i] = -1;
+                                    //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                                    empty_redirect_queue = 1;
+                                    tcp_occupied = 0;
+                                    for(i = 0; i<tcp_sessions; i++)
+                                    {
+                                        if(fd_array[i] != -1)
+                                        {
+                                            close(fd_array[i]);
+                                            fd_array[i] = -1;
+                                        }
+                                    }
+                                }
+
+                                if(head_pop_query_list == NULL)
+                                {
+                                    head_pop_query_list = newElementQuery(query_id, bestpops);
+                                    tail_pop_query_list = head_pop_query_list;
+                                }
+                                else
+                                {
+                                    insertTailQuery(query_id, bestpops, &tail_pop_query_list);
                                 }
                             }
                         }
+
 
 
                         //Para não causar atrasos, recorre à lista auxiliar de pops, caso esta não esteja vazia e
@@ -763,28 +877,42 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 empty_pops_queue = 1;
 
 
-                                if(tcp_occupied > 0)
+                                if(tcp_occupied > 0 && waiting_pop_reply == 0)
                                 {
-                                    query_id++;
-                                    redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
-                                                                          redirect_queue_head, &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
-                                    waiting_pop_reply = 1;
-                                    received_pops = 0;
-
-                                    if(redirect_queue_head == NULL)
+                                    if(redirect_queue_head != NULL)
                                     {
-                                        //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
-                                        empty_redirect_queue = 1;
-                                        tcp_occupied = 0;
-                                        for(i = 0; i<tcp_sessions; i++)
+                                        query_id++;
+                                        redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
+                                                                              redirect_queue_head, &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
+                                        waiting_pop_reply = 1;
+                                        received_pops = 0;
+
+                                        if(redirect_queue_head == NULL)
                                         {
-                                            if(fd_array[i] != -1)
+                                            //Se a a cabeça da lista de elementos diretamente a jusante for NULL, a lista ficou vazia
+                                            empty_redirect_queue = 1;
+                                            tcp_occupied = 0;
+                                            for(i = 0; i<tcp_sessions; i++)
                                             {
-                                                close(fd_array[i]);
-                                                fd_array[i] = -1;
+                                                if(fd_array[i] != -1)
+                                                {
+                                                    close(fd_array[i]);
+                                                    fd_array[i] = -1;
+                                                }
                                             }
                                         }
+
+                                        if(head_pop_query_list == NULL)
+                                        {
+                                            head_pop_query_list = newElementQuery(query_id, bestpops);
+                                            tail_pop_query_list = head_pop_query_list;
+                                        }
+                                        else
+                                        {
+                                            insertTailQuery(query_id, bestpops, &tail_pop_query_list);
+                                        }
                                     }
+
                                 }
 
                             }
@@ -874,6 +1002,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                 free(interm_tail);
                 free(timeout);
                 freePrintList(head_print);
+                freeQueryList(head_pop_query_list);
                 return;
             }
         }
@@ -893,7 +1022,6 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
     //PQ e PR
     int query_id = -1;
-    int query_id_rcvd;
     int requested_pops;
     int sent_pops = 0;
 
@@ -989,6 +1117,11 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
     int data_to_read = 0;
 
+    query_list *head_pop_query_list = NULL;
+    query_list *tail_pop_query_list = NULL;
+    query_list *current_pop_query_list = NULL;
+    query_list *previous_pop_query_list = NULL;
+
 
     printf("\n\nINTERFACE DE UTILIZADOR\n\n");
 
@@ -1008,11 +1141,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0);
+                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0, query_id_rcvd_aux);
                 if(n == 1)
                 {
                     free(timeout);
                     free(aux_buffer_dad);
+                    freeQueryList(head_pop_query_list);
                     return;
                 }
                 flowing_reference = time(NULL);
@@ -1159,14 +1293,14 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             if(flag_d) printf("Mensagem recebida do par a jusante %s:%s: %s\n", getIP(aux), getPORT(aux), aux_buffer_sons[i]);
 
                             query_id_rcvd_aux = receive_pop_reply(aux_buffer_sons[i], popreply_ip, popreply_port, &popreply_avails);
-                            if(requested_pops - sent_pops > 0) //Se tiver pops por enviar
-                            {
-                                query_id_rcvd = query_id_rcvd_aux;
 
-                                //Verifica o queryID recebido na reply é o mesmo que o da última query
-                                if(query_id == query_id_rcvd)
+                            current_pop_query_list = getElementById(head_pop_query_list, &previous_pop_query_list, query_id_rcvd_aux);
+
+                            if(current_pop_query_list != NULL)
+                            {
+                                if(getBestPopsQuery(current_pop_query_list) > 0) //Se tiver pops por enviar
                                 {
-                                    n = send_pop_reply(query_id, popreply_avails, popreply_ip, popreply_port, fd_pop);
+                                    n = send_pop_reply(query_id_rcvd_aux, popreply_avails, popreply_ip, popreply_port, fd_pop);
 
                                     if(n == 0)
                                     {
@@ -1178,11 +1312,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                                         if(n == 1)
                                         {
                                             free(timeout);
                                             free(aux_buffer_dad);
+                                            freeQueryList(head_pop_query_list);
                                             return;
                                         }
                                         flowing_reference = time(NULL);
@@ -1190,14 +1325,22 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                     }
                                     else
                                     {
-                                        //se correu bem atualiza o nº de pops enviados
-                                        sent_pops += popreply_avails;
+                                        //Se correu bem decrementa o número de pops por enviar
+                                        decreaseBestPops(current_pop_query_list, popreply_avails);
+
+                                        if(getBestPopsQuery(current_pop_query_list) <= 0)
+                                        {
+                                            //Se ficar menor ou igual a 0, remove-se o elemento da lista
+                                            removeElementQuery(previous_pop_query_list, current_pop_query_list,
+                                                    &head_pop_query_list, &tail_pop_query_list);
+                                        }
                                     }
+
                                 }
                             }
                             else
                             {
-                                if(flag_d) printf("Pop reply descartada, pois já foram recebidos todos os pops pedidos!\n\n");
+                                if(flag_d) printf("Não existe nenhum pedido associado ao query ID recebido no Pop Reply\n\n");
                             }
                         }
                         else if(!strcmp("TR", buffer))
@@ -1221,11 +1364,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                                 if(n == 1)
                                 {
                                     free(timeout);
                                     free(aux_buffer_dad);
+                                    freeQueryList(head_pop_query_list);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1277,11 +1421,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
-                             aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                             aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                 if(n == 1)
                 {
                     free(timeout);
                     free(aux_buffer_dad);
+                    freeQueryList(head_pop_query_list);
                     return;
                 }
                 flowing_reference = time(NULL);
@@ -1372,11 +1517,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                          fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                          pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                         redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                                         redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                             if(n == 1)
                             {
                                 free(timeout);
                                 free(aux_buffer_dad);
+                                freeQueryList(head_pop_query_list);
                                 return;
                             }
                             flowing_reference = time(NULL);
@@ -1458,11 +1604,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0);
+                                     redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0, query_id_rcvd_aux);
                         if(n == 1)
                         {
                             free(timeout);
                             free(aux_buffer_dad);
+                            freeQueryList(head_pop_query_list);
                             return;
                         }
                         flowing_reference = time(NULL);
@@ -1499,11 +1646,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                         n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                      fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                      pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux,
-                                     tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0);
+                                     tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 0, query_id_rcvd_aux);
                         if(n == 1)
                         {
                             free(timeout);
                             free(aux_buffer_dad);
+                            freeQueryList(head_pop_query_list);
                             return;
                         }
                         flowing_reference = time(NULL);
@@ -1543,11 +1691,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                                 if(n == 1)
                                 {
                                     free(timeout);
                                     free(aux_buffer_dad);
+                                    freeQueryList(head_pop_query_list);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1578,6 +1727,19 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                         }
                                     }
                                 }
+
+
+                                if(head_pop_query_list == NULL)
+                                {
+                                    head_pop_query_list = newElementQuery(query_id, requested_pops - sent_pops);
+                                    tail_pop_query_list = head_pop_query_list;
+                                }
+                                else
+                                {
+                                    insertTailQuery(query_id, requested_pops - sent_pops, &tail_pop_query_list);
+                                }
+
+
                             }
                         }
                         else if(tcp_occupied > 0)
@@ -1600,6 +1762,17 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                     }
                                 }
                             }
+
+                            if(head_pop_query_list == NULL)
+                            {
+                                head_pop_query_list = newElementQuery(query_id, requested_pops - sent_pops);
+                                tail_pop_query_list = head_pop_query_list;
+                            }
+                            else
+                            {
+                                insertTailQuery(query_id, requested_pops - sent_pops, &tail_pop_query_list);
+                            }
+
                         }
                     }
 
@@ -1631,11 +1804,12 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                                 n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, &redirect_queue_head, &redirect_queue_tail,
                                              fd_array, &tcp_occupied, tcp_sessions, &empty_redirect_queue, is_root, pop_addr,
                                              pop_tport, &fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops,
-                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1);
+                                             redirect_aux, tsecs, aux_buffer_sons, aux_ptr_sons, nread_sons, &is_flowing, 1, query_id_rcvd_aux);
                                 if(n == 1)
                                 {
                                     free(timeout);
                                     free(aux_buffer_dad);
+                                    freeQueryList(head_pop_query_list);
                                     return;
                                 }
                                 flowing_reference = time(NULL);
@@ -1683,6 +1857,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                 free(aux_buffer_sons);
                 free(timeout);
                 free(aux_buffer_dad);
+                freeQueryList(head_pop_query_list);
                 return;
             }
         }
@@ -1968,7 +2143,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
         queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
         int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
         char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs, char **aux_buffer_sons,
-        char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken)
+        char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken, int query_id)
 {
     //Variáveis para readesão
     struct addrinfo *res_udp = NULL;
@@ -1981,15 +2156,16 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
     char buffer_readesao[BUFFER_SIZE];
     int n;
 
-    *is_flowing = 0;
+
 
     //Envia broken stream
-    if(send_broken)
+    if(send_broken && *is_flowing == 1)
     {
         *redirect_queue_head = send_broken_stream_to_all(fd_array, tcp_occupied, *redirect_queue_head, redirect_queue_tail,
                                                          empty_redirect_queue);
     }
 
+    *is_flowing = 0;
 
 
     /////////////////////////////// Aderir novamente à stream //////////////////////////////////
@@ -2026,7 +2202,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
             interface_root(fd_ss, fd_rs, res_rs, streamID, *is_root, ipaddr, uport, tport, tcp_sessions, *tcp_occupied,
                            fd_udp, fd_tcp_server, fd_array, bestpops, *redirect_queue_head, *redirect_queue_tail,
                            redirect_aux, *empty_redirect_queue, tsecs, rsaddr, rsport, aux_buffer_sons, aux_ptr_sons, nread_sons,
-                           *is_flowing);
+                           *is_flowing, query_id);
             return 1; //Se ele sair da inferface_root é porque o programa foi terminado
 
         }
@@ -2051,7 +2227,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                     n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
                             fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
                             fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
-                            aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, send_broken);
+                            aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, send_broken, query_id);
 
                     if(n == 0) return 0;
                     else if(n == 1) return 1;

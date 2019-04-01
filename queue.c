@@ -25,6 +25,8 @@ queue *newElement(char *ip, char *port, int available_sessions, int index)
     head->port = NULL;
     head->next = NULL;
 
+    printf("ip %s porto %s\n", ip, port);
+
     head->ip = (char *)malloc(sizeof(char)*(strlen(ip)+1));
     if(head->ip == NULL)
     {
@@ -47,6 +49,7 @@ queue *newElement(char *ip, char *port, int available_sessions, int index)
     strcpy(head->port, port);
     head->available_sessions = available_sessions;
     head->index = index;
+
 
     return head;
 }
@@ -298,6 +301,31 @@ queue *getElementByIndex(queue *head, int index)
     }
 
     return NULL;
+}
+
+queue *getElementByAddress(queue *head, char *ip, char *port)
+{
+    queue *aux = NULL;
+
+    aux = head;
+
+    while(aux != NULL)
+    {
+        if(strcmp(ip, getIP(aux)) == 0 && strcmp(port, getPORT(aux)) == 0)
+        {
+            return aux;
+        }
+
+        aux = getNext(aux);
+    }
+
+    return NULL;
+}
+
+void setAvailable(queue *element, int available)
+{
+    if(element == NULL) return;
+    element->available_sessions = available;
 }
 
 void setNext(queue *element, queue *next)

@@ -6,6 +6,7 @@
 #include "queue.h"
 #include "iamroot.h"
 #include <time.h>
+#include "query_list.h"
 
 #define MAX_AUX_POPS 10
 #define POP_QUERY_TIMEOUT 100
@@ -16,7 +17,7 @@
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,
         queue *redirect_queue_tail, queue *redirect_queue_aux, int empty_redirect_queue, int tsecs, char *rsaddr,
-        char *rsport, char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing);
+        char *rsport, char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int is_flowing, int query_id);
 void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char *streamIP, char *streamPORT,
         int *is_root, char* ipaddr, char *uport, char *tport, int tcp_sessions, int tcp_occupied, int fd_tcp_server,
         int *fd_array, int bestpops, int fd_pop, char *pop_addr, char *pop_tport, char *rsaddr, char *rsport, int tsecs);
@@ -32,7 +33,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
              queue **redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *tcp_occupied, int tcp_sessions,
              int *empty_redirect_queue, int *is_root, char *pop_addr, char *pop_tport, int *fd_pop, char *streamIP,
              char *streamPORT, char *tport, int fd_tcp_server, int bestpops, queue *redirect_aux, int tsecs,
-             char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken);
+             char **aux_buffer_sons, char **aux_ptr_sons, int *nread_sons, int *is_flowing, int send_broken, int query_id);
 int receive_data_root(char *data, int fd_ss, int tcp_sessions, queue **redirect_queue_head, queue **redirect_queue_tail,
                       int *empty_redirect_queue, int *is_flowing, int *fd_array, int *tcp_occupied);
 queue *send_data_root(char *data, int data_len, int tcp_sessions, int *fd_array, int *tcp_occupied, queue *redirect_queue_head,

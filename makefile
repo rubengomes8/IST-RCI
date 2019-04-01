@@ -24,8 +24,8 @@ default: iamroot
 # To create the executable file iamroot we need the object files
 # iamroot.o, udp.o, tcp.o, utils.o and interface.o:
 #
-iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o
-	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o
+iamroot:  iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o query_list.o
+	$(CC) $(CFLAGS) -o iamroot iamroot.o udp.o tcp.o utils.o root_server.o interface.o queue.o intermediate_list.o list_to_print.o query_list.o
 
 # To create the object file iamroot.o, we need the source
 # files iamroot.c, udp.h, tcp.h, utils.h and interface,h:
@@ -80,6 +80,12 @@ intermediate_list.o:  intermediate_list.c intermediate_list.h utils.h queue.h
 #
 interface.o:  interface.c interface.h utils.h queue.h intermediate_list.h list_to_print.h
 	$(CC) $(CFLAGS) -c interface.c
+
+# To create the object file interface.o, we need the source files
+# query_list.c and query_list.h:
+#
+query_list.o:  query_list.c query_list.h
+	$(CC) $(CFLAGS) -c query_list.c
 
 # To start over from scratch, type 'make clean'.  This
 # removes the executable file, as well as old .o object
