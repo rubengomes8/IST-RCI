@@ -8,8 +8,10 @@
 #include <time.h>
 
 #define MAX_AUX_POPS 10
-#define POP_QUERY_TIMEOUT 10
+#define POP_QUERY_TIMEOUT 100
 #define SONS_BUFFER 256
+#define SF_TIMEOUT 15
+#define DADS_BUFFER 256
 
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,
         int tcp_sessions, int tcp_occupied, int fd_udp, int fd_tcp_server, int *fd_array, int bestpops, queue *redirect_queue_head,

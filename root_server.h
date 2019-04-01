@@ -37,7 +37,7 @@
 #define TR_MAX_LEN 10000 //isto supostamente será para tirar - ver função receive_tree_reply_and_propagate
 
 //Definição do timeout
-#define TIMEOUT_SECS 10
+#define TIMEOUT_SECS 5 //timeout para comunicações com servidor de raízes
 #define TIMEOUT_USECS 0
 
 #include "tcp.h"
