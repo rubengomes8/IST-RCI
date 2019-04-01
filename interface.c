@@ -912,7 +912,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
     //Mensagens
     char buffer[MAX_BYTES]; buffer[0] = '\0';
-    char *ptr = NULL;
+    //char *ptr = NULL;
     char msg[MAX_BYTES]; msg[0] = '\0';
 
     //SF/BS
@@ -925,7 +925,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
 
     //Dados
     char *data = NULL;
-    char *data_ptr = NULL;
+    //char *data_ptr = NULL;
     int data_len;
 
     //Buffers intermédios para leitura dos filhos
@@ -1394,7 +1394,7 @@ void interface_not_root(int fd_rs, struct addrinfo *res_rs, char* streamID, char
                             fflush(stdout);*/
 
                             sprintf(msg, "DA %04X\n", nread_dad);
-                            ptr = msg;
+                            //ptr = msg;
 
                             //Retransmitir
                             for(i = 0; i<tcp_sessions; i++)

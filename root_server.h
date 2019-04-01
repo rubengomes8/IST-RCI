@@ -8,7 +8,7 @@
 #define RIS_LEN 100 //rootis length 6+1+64+1+20+1+6+1=100
 #define URR_LEN 82 //urroot length 6+1+64+1=82
 #define DUMP_LEN 6
-#define STREAMS_LEN 10000 //valor arbitrário para o comprimento da mensagem STREAMS, recebida pelo servidor de raízes
+#define STREAMS_LEN 1000 //valor arbitrário para o comprimento da mensagem STREAMS, recebida pelo servidor de raízes
 #define REMOVE_LEN 72
 
 //Comunicação com o servidor de acessos

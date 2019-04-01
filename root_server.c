@@ -12,16 +12,24 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     struct sockaddr_in addr;
     unsigned int addrlen;
     int n;
-    char msg2[STREAMS_LEN];
+    char *msg2 = NULL;
     struct timeval *timeout = NULL;
     int counter = 0, maxfd;
     fd_set fdSet;
 
+    msg2 = (char *)malloc(sizeof(char)*STREAMS_LEN);
+    if(msg == NULL)
+    {
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        exit(1);
+    }
+
+
     timeout = (struct timeval *)malloc(sizeof(struct timeval));
     if(timeout == NULL)
     {
-        if(flag_d) fprintf(stderr, "Error: malloc: %s\n", strerror(errno));
-        exit(1);
+        if(flag_d) fprintf(stderr, "Erro: malloc: %s\n\n", strerror(errno));
+        return -1;
     }
 
     timeout->tv_sec = TIMEOUT_SECS;
@@ -56,11 +64,26 @@ int dump(int fd_rs, struct addrinfo *res_rs)
     }
 
     n = STREAMS_LEN; //Máximo comprimento da mensagem que pode receber
-    n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
+    n = udp_receive(fd_rs, &n, msg2, MSG_PEEK | MSG_TRUNC , &addr, &addrlen);
+
+    if(n > STREAMS_LEN)
+    {
+        free(msg2);
+
+        msg2 = (char *)malloc(sizeof(char)*n);
+        if(msg2 == NULL)
+        {
+            free(timeout);
+            return -1;
+        }
+
+        n = udp_receive(fd_rs, &n, msg2, 0, &addr, &addrlen);
+    }
 
     if(flag_d) printf("Mensagem recebida do servidor de raízes:");
     printf("%s\n", msg2);
 
+    free(msg2);
     free(timeout);
     return 0;
 }
