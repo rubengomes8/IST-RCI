@@ -137,7 +137,7 @@ int getAvailableSessions(queue *element)
 void decreaseAvailableSessions(queue *element)
 {
     if(element == NULL) return;
-    element->available_sessions--;
+    (element->available_sessions)--;
 }
 
 //Remove um elemento, retorna a nova head e altera a tail, se necessário. Se retornar NULL deixou de existir fila
