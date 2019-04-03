@@ -30,7 +30,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
 
     //PQ/PR
     int waiting_pop_reply = 0;
-    int received_pops = 0;
 
     //Queue de pops. A raiz nunca faz parte da lista
     struct _queue *pops_queue_head = NULL;
@@ -62,14 +61,10 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
     long reference_time_pop_query = time(NULL);
     long now = time(NULL);
     char *msg_whoisroot = NULL;
-    char buffer_whoisroot[BUFFER_SIZE];
 
     //Servidor de acessos
     struct sockaddr_in addr;
     unsigned int addrlen;
-
-    //Validação de informação recebida
-    int correct_info = 0;
 
     //Variáveis para ciclos for
     int i;
@@ -888,7 +883,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                                                       &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
                                 //está à espera da resposta do pop_query
                                 waiting_pop_reply = 1;
-                                received_pops = 0;
 
 
                                 if(redirect_queue_head == NULL)
@@ -930,7 +924,31 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 aux_pops_queue_aux = aux_pops_queue_head;
                             }
                             popresp(fd_udp, streamID, getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux), addrlen, addr);
+                            decreaseAvailableSessions(aux_pops_queue_aux);
+                            //Não dá o elemento mais que 5 vezes além do limite
+                            if(getAvailableSessions(aux_pops_queue_aux) <= -5)
+                            {
+                                aux_pops_queue_head = removeElementByAddress(aux_pops_queue_head, &aux_pops_queue_tail,
+                                        getIP(aux_pops_queue_aux), getPORT(aux_pops_queue_aux));
+
+                                if(aux_pops_queue_aux == NULL)
+                                {
+                                    //Lista auxiliar ficou vazia
+                                    empty_aux_pops_queue = 1;
+                                    aux_pops_queue_head = NULL;
+                                    aux_pops_queue_tail = NULL;
+                                    aux_pops_queue_aux = NULL;
+                                }
+                            }
+
+
+
                             aux_pops_queue_aux = getNext(aux_pops_queue_aux);
+                        }
+                        else
+                        {
+                            //Em último recurso envia para ele próprio, mesmo sabendo que vai redirecionar
+                            popresp(fd_udp, streamID, ipaddr, tport, addrlen, addr);
                         }
                     }
                     else
@@ -970,7 +988,6 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                         redirect_queue_head = pop_query_peers(tcp_sessions, fd_array, query_id, bestpops,
                                                                               redirect_queue_head, &redirect_queue_tail, &tcp_occupied, &empty_redirect_queue);
                                         waiting_pop_reply = 1;
-                                        received_pops = 0;
 
                                         if(redirect_queue_head == NULL)
                                         {
@@ -2456,7 +2473,7 @@ queue *pop_query_peers(int tcp_sessions, int *fd_array, int query_id, int bestpo
     return redirect_queue_head;
 }
 
-queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
+/*queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char *ptr, int *empty_pops_queue, int query_id,
         int *received_pops, int waiting_pop_reply, int *correct_info, int *insert_tail)
 {
     char ip[IP_LEN + 1];
@@ -2507,7 +2524,7 @@ queue *get_data_pop_reply(queue *pops_queue_head, queue **pops_queue_tail, char 
 
 
     return pops_queue_head;   
-}
+}*/
 
 //retorna 1 se for para acabar o programa. caso em que passou a ser raiz e depois saiu
 //retorna 0 se for para continuar. caso em que nunca chegou a ser raiz

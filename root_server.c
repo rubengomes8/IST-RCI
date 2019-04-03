@@ -911,7 +911,7 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
 }
 
 
-int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
+/*int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
 {
     char *msg = NULL;
     char msg_aux[TR_MAX_LEN];
@@ -968,7 +968,7 @@ int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son)
     free(msg);
     return 1;
 
-}
+}*/
 
 
 queue* root_send_tree_query(queue *redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *empty_redirect_queue,

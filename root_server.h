@@ -85,7 +85,7 @@ queue* send_tree_query(char *ip, char *tport, int *fd_array, int tcp_sessions, i
                        queue **redirect_queue_tail, int *empty_redirect_queue);
 int receive_tree_query(char *ptr, char *ip, char *tport);
 int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, queue *redirect_queue_head, queue *redirect_queue_tail, int fd);
-int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son);
+//int receive_tree_reply_and_propagate(char *ptr, int fd_pop, int fd_son);
 //Monitoriazação da estrutura da árvore de escoamento associada à root
 queue* root_send_tree_query(queue *redirect_queue_head, queue **redirect_queue_tail, int *fd_array, int *empty_redirect_queue,
                          int *tcp_occupied);
