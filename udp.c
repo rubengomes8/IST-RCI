@@ -32,7 +32,7 @@ int udp_socket(char *host, char *service, struct addrinfo **res)
     return fd;
 }
 
-void udp_send(int fd, char* msg, int msg_len, int flags, struct addrinfo *res)
+int udp_send(int fd, char* msg, int msg_len, int flags, struct addrinfo *res)
 {
     int n;
 
@@ -40,8 +40,10 @@ void udp_send(int fd, char* msg, int msg_len, int flags, struct addrinfo *res)
     if(n == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: udp_send: sendto: %s\n", strerror((errno)));
-        exit(1);
+        return -1;
     }
+
+    return 0;
 }
 
 
@@ -96,7 +98,7 @@ int udp_bind(int fd, struct addrinfo *res)
     return 0;
 }
 
-void udp_answer(int fd, char* msg, int msg_len, int flags, struct sockaddr *addr, int addrlen)
+int udp_answer(int fd, char* msg, int msg_len, int flags, struct sockaddr *addr, int addrlen)
 {
     int n;
 
@@ -104,6 +106,8 @@ void udp_answer(int fd, char* msg, int msg_len, int flags, struct sockaddr *addr
     if(n == -1)
     {
         if(flag_d) fprintf(stderr, "Erro: udp_answer: sendto: %s\n", strerror((errno)));
-        exit(1);
+        return -1;
     }
+
+    return 0;
 }

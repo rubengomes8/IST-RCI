@@ -110,11 +110,11 @@ int main(int argc, char *argv[])
     }
 
     // Liga-se ao servidor de raízes por UDP
-    if(flag_d) fprintf(stdout, "A ligar-se ao servidor de raízes...\n");
+    if(flag_d) fprintf(stdout, "A ligar-se ao servidor de raízes...\n\n");
     fd_rs = udp_socket(rsaddr, rsport, &res_rs);
     if(fd_rs == -1)
     {
-        if(flag_d) printf("Falha ao ligar-se ao servidor de raízes...\nA aplicação irá terminar...\n");
+        if(flag_d) printf("Falha ao ligar-se ao servidor de raízes\nA aplicação irá terminar\n");
         if (res_rs != NULL) freeaddrinfo(res_rs);
         exit(0);
     }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     if(has_stream)
     {
         ///////////////////////////////// Descobre se é raíz ou não /////////////////////////////////////////////////////
-        msg = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport);
+        msg = find_whoisroot(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, 1);
 
         //Verifica se a resposta a WHOISROOT foi ERROR, URROOT ou ROOTIS
         if(!strcmp(msg, "ERROR")) //Recebeu Error
@@ -152,24 +152,24 @@ int main(int argc, char *argv[])
                 is_root = 1;
 
                 //////////////////// 1. Estabelecer sessão TCP com o servidor fonte /////////////////////////////////////
-                fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT);
+                fd_ss = source_server_connect(fd_rs, res_rs, streamIP, streamPORT, streamID);
 
 
                 ////////////////// 2. Instalar servidor TCP para o ponto de acesso a jusante ////////////////////////////
-                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, ipaddr, tcp_sessions);
+                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, ipaddr, tcp_sessions, streamID, is_root);
 
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
-                fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs);
+                fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs, is_root, streamID);
 
 
                 ////////////////////// 3. instalar o servidor UDP de acesso de raiz /////////////////////////////////////
-                fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array);
+                fd_udp = install_access_server(ipaddr, fd_rs, fd_ss, res_rs, &res_udp, uport, fd_array, streamID);
 
                 //////////////////////////// 4. executar a interface de utilizador //////////////////////////////////////
                 interface_root(fd_ss, fd_rs, res_rs, streamID, is_root, ipaddr, uport, tport, tcp_sessions, tcp_occupied,
                         fd_udp, fd_tcp_server, fd_array, bestpops, NULL, NULL, NULL, 1, tsecs, rsaddr, rsport,
-                        aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, query_id);
+                        aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, query_id, streamIP, streamPORT);
 
             }
             else if (!strcmp(buffer, "ROOTIS"))
@@ -195,10 +195,10 @@ int main(int argc, char *argv[])
                 fd_udp = -1;
 
                 ////////////////// 4. Instala servidor TCP para o ponto de acesso a jusante ////////////////////////////
-                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, ipaddr, tcp_sessions);
+                fd_tcp_server = install_tcp_server(tport, fd_rs, res_rs, fd_ss, ipaddr, tcp_sessions, streamID, is_root);
 
                 //Cria array com tamanho tcp_sessions para ligações a jusante
-                fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs);
+                fd_array = create_fd_array(tcp_sessions, fd_rs, fd_ss, res_rs, is_root, streamID);
 
                 //////////////// 5. Envia a montante a informação do novo ponto de acesso //////////////////////////////
                 //Enviar port TCP para o peer de cima a mensagem NEW_POP ---> NP<SP><ipaddr>:<tport><LF>
@@ -231,7 +231,9 @@ int main(int argc, char *argv[])
 
 //Envia ao servidor de raízes a mensagem who_is_root e recebe a resposta. Retorna essa resposta em caso de sucesso
 //ou NULL em caso de erro
-char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr, char *uport){
+char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, char *rsport, char *ipaddr,
+        char *uport, int exit_flag)
+{
     int counter = 0;
     char *msg = NULL;
 
@@ -246,12 +248,20 @@ char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *r
             if(flag_d)
             {
                 printf("\n");
-                printf("Impossível comunicar com o servidor de raízes, após %d tentativas...\n", MAX_TRIES);
-                printf("A terminar o programa...\n");
+                printf("Impossível comunicar com o servidor de raízes, após %d tentativas\n", MAX_TRIES);
+                printf("A aplicação irá terminar\n");
             }
             if (res_rs != NULL) freeaddrinfo(res_rs);
             if (fd_rs != -1) close(fd_rs);
-            exit(0);
+
+            if(exit_flag)
+            {
+                exit(0);
+            }
+            else
+            {
+                return NULL;
+            }
         }
         msg = who_is_root(fd_rs, res_rs, streamID, rsaddr, rsport, ipaddr, uport);
     }
@@ -259,13 +269,13 @@ char *find_whoisroot(struct addrinfo *res_rs, int fd_rs, char *streamID, char *r
 }
 
 //Faz a ligação ao servidor fonte da stream
-int source_server_connect(int fd_rs, struct addrinfo *res_rs, char *streamIP, char *streamPORT)
+int source_server_connect(int fd_rs, struct addrinfo *res_rs, char *streamIP, char *streamPORT, char *streamID)
 {
     int fd_ss = -1;
 
     if(flag_d)
     {
-        printf("A estabelecer ligação TCP com o servidor fonte, no endereço %s:%s...\n", streamIP, streamPORT);
+        printf("A estabelecer ligação TCP com o servidor fonte, no endereço %s:%s\n", streamIP, streamPORT);
     }
 
     fd_ss = tcp_socket_connect(streamIP, streamPORT);
@@ -273,11 +283,13 @@ int source_server_connect(int fd_rs, struct addrinfo *res_rs, char *streamIP, ch
     {
         if(flag_d)
         {
-            printf("Erro na comunicação TCP com o servidor fonte...\n");
+            printf("Erro na comunicação TCP com o servidor fonte\n");
             printf("A aplicação irá terminar...\n");
         }
+        remove_stream(fd_rs, res_rs, streamID);
         if(fd_rs != -1) close(fd_rs);
         if(res_rs != NULL) freeaddrinfo(res_rs);
+
         exit(0);
     }
 
@@ -290,7 +302,8 @@ int source_server_connect(int fd_rs, struct addrinfo *res_rs, char *streamIP, ch
 }
 
 //Instala um servidor TCP para comunicação a jusante
-int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, char *ipaddr, int tcp_sessions)
+int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_ss, char *ipaddr, int tcp_sessions,
+        char * streamID, int is_root)
 {
     int fd_tcp_server = -1;
 
@@ -309,9 +322,11 @@ int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_s
             printf("Erro ao instalar o servidor TCP para transmissão a jusante...\n");
             printf("A aplicação irá terminar...\n");
         }
+        if(is_root) remove_stream(fd_rs, res_rs, streamID);
         if(fd_rs != -1) close(fd_rs);
         if(res_rs != NULL) freeaddrinfo(res_rs);
         if(fd_ss != -1) close(fd_ss);
+
         exit(0);
     }
 
@@ -324,13 +339,14 @@ int install_tcp_server(char *tport, int fd_rs, struct addrinfo *res_rs, int fd_s
 }
 
 //Cria um array para armazenar os file descriptors dos pares a jusante
-int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs)
+int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *res_rs, int is_root, char *streamID)
 {
     int *fd_array;
 
     fd_array = fd_array_init(tcp_sessions);
     if(fd_array == NULL)
     {
+        if(is_root) remove_stream(fd_rs, res_rs, streamID);
         if(fd_rs != -1) close(fd_rs);
         if(fd_ss != -1) close(fd_ss);
         if(res_rs != NULL) freeaddrinfo(res_rs);
@@ -341,19 +357,21 @@ int *create_fd_array(int tcp_sessions, int fd_rs, int fd_ss, struct addrinfo *re
 }
 
 //Instala servidor de acessos UDP
-int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp, char *uport, int *fd_array)
+int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *res_rs, struct addrinfo **res_udp,
+        char *uport, int *fd_array, char *streamID)
 {
     int fd_udp = -1;
 
-    if(flag_d) printf("A instalar servidor de acessos UDP no endereço %s:%s...\n", ipaddr, uport);
+    if(flag_d) printf("A instalar servidor de acessos UDP no endereço %s:%s\n", ipaddr, uport);
     fd_udp = udp_socket(ipaddr, uport, res_udp);
     if(fd_udp == -1)
     {
         if(flag_d)
         {
-            printf("Erro ao criar o socket UDP para o servidor de acessos...\n");
+            printf("Erro ao criar o socket UDP para o servidor de acessos\n");
             printf("A aplicação irá terminar...\n");
         }
+        remove_stream(fd_rs, res_rs, streamID);
         if(fd_rs != -1) close(fd_rs);
         if(res_rs != NULL) freeaddrinfo(res_rs);
         if(fd_ss != -1) close(fd_ss);
@@ -366,9 +384,10 @@ int install_access_server(char *ipaddr, int fd_rs, int fd_ss, struct addrinfo *r
     {
         if(flag_d)
         {
-            printf("Erro ao criar o socket UDP para o servidor de acessos...\n");
+            printf("Erro ao criar o socket UDP para o servidor de acessos\n");
             printf("A aplicação irá terminar...\n");
         }
+        remove_stream(fd_rs, res_rs, streamID);
         if(fd_rs != -1) close(fd_rs);
         if(res_rs != NULL) freeaddrinfo(res_rs);
         if(fd_ss != -1) close(fd_ss);
@@ -430,7 +449,7 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
     int fd_udp = -1;
     int counter = 0;
 
-    if(flag_d) printf("A ligar-se o servidor de acessos, no endereço %s:%s...\n", rasaddr, rasport);
+    if(flag_d) printf("A ligar-se o servidor de acessos, no endereço %s:%s\n", rasaddr, rasport);
     fd_udp = udp_socket(rasaddr, rasport, res_udp);
     if(fd_udp == -1)
     {
@@ -438,14 +457,14 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
         {
             if(flag_d)
             {
-                printf("Falha ao ligar-se ao servidor de acesso...\n");
+                printf("Falha ao ligar-se ao servidor de acessos\n");
             }
             freeaddrinfo(*res_udp);
             return -1;
         }
         if(flag_d)
         {
-            printf("Falha ao ligar-se ao servidor de acesso...\n");
+            printf("Falha ao ligar-se ao servidor de acessos\n");
             printf("A aplicação irá terminar...\n");
         }
         if(fd_rs != -1) close(fd_rs);
@@ -462,7 +481,7 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
         {
             if(flag_readesao)
             {
-                if(flag_d) printf("Impossível comunicar com o servidor de acessos, após %d tentativas...\n", MAX_TRIES);
+                if(flag_d) printf("Impossível comunicar com o servidor de acessos, após %d tentativas\n", MAX_TRIES);
                 close(fd_udp);
                 freeaddrinfo(*res_udp);
                 return -1;
@@ -470,9 +489,9 @@ int get_access_point(char *rasaddr, char *rasport, struct addrinfo **res_udp, in
             if(flag_d)
             {
                 printf("\n");
-                printf("Impossível comunicar com o servidor de acessos, após %d tentativas...\n", MAX_TRIES);
+                printf("Impossível comunicar com o servidor de acessos, após %d tentativas\n", MAX_TRIES);
 
-                printf("A terminar o programa...\n");
+                printf("A aplicação irá terminar...\n");
             }
             if(fd_rs != -1) close(fd_rs);
             if(res_rs != NULL) freeaddrinfo(res_rs);
@@ -505,10 +524,10 @@ int connect_to_peer(char *pop_addr, char *pop_tport, int fd_rs, int fd_udp, stru
     if(fd_pop == -1)
     {
 
-        if(flag_d) printf("Falha ao ligar-se ao par a montante...\n");
+        if(flag_d) printf("Falha ao ligar-se ao par a montante\n");
         if(flag == 1)
         {
-            if(flag_d) printf("A tentar ligar-se de novo...\n");
+            if(flag_d) printf("A tentar ligar-se de novo\n");
             return -1;
         }
         if(flag == 0) printf("A aplicação irá terminar...\n");
@@ -539,7 +558,7 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
 
     if(flag_d)
     {
-        printf("A tentar comunicar com o par a montante...\n");
+        printf("A tentar comunicar com o par a montante\n");
     }
 
     //Recebe port TCP do peer de cima a mensagem WELCOME ---> WE<SP><streamID><LF>
@@ -554,7 +573,7 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
             if(flag_d)
             {
                 printf("\n");
-                printf("Impossível comunicar com o par, após %d tentativas...\n", MAX_TRIES);
+                printf("Impossível comunicar com o par, após %d tentativas\n", MAX_TRIES);
                 printf("A aplicação irá terminar...\n");
             }
             if(fd_rs != -1) close(fd_rs);
@@ -565,7 +584,7 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
         }
         if(flag_d)
         {
-            printf("A tentar comunicar com o par...\n");
+            printf("A tentar comunicar com o par\n");
         }
         msg = receive_confirmation(fd_pop, msg);
     }
@@ -590,7 +609,7 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
             if(flag_d)
             {
                 printf("\n");
-                printf("Recebido um Welcome com o streamID errado...\n");
+                printf("Recebido um Welcome com o streamID errado\n");
                 printf("A aplicação irá terminar...\n");
             }
             if(fd_rs != -1) close(fd_rs);
@@ -605,12 +624,12 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
     }
     else if(!strcmp(buffer, "RE")) //Recebeu uma mensagem REDIRECT
     {
-        if(flag_d) printf("Ponto de acesso indisponível...\nA obter novo ponto de acesso...\n");
+        if(flag_d) printf("Ponto de acesso indisponível\nA obter um novo ponto de acesso\n");
         if(get_redirect(pop_addr, pop_tport, msg) == -1)
         {
             if(flag_d)
             {
-                printf("Falha ao obter o novo ponto de acesso...\n");
+                printf("Falha ao obter o novo ponto de acesso\n");
                 printf("A aplicação irá terminar...\n");
             }
             if(msg != NULL) free(msg);
@@ -639,14 +658,15 @@ int wait_for_confirmation(char *pop_addr, char *pop_tport, int fd_rs, struct add
 }
 
 //Envia uma mensagem a montante a informar do endereço do novo ponto de acesso
-void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addrinfo *res_rs, int fd_tcp_server, int *fd_array)
+void send_new_pop(int fd_pop, char *ipaddr, char *tport, int fd_rs, struct addrinfo *res_rs, int fd_tcp_server,
+        int *fd_array)
 {
-    if(flag_d) printf("A enviar a montante o endereço e o porto do ponto de acesso disponibilizado...\n");
+    if(flag_d) printf("A enviar a montante o endereço e o porto do ponto de acesso disponibilizado\n");
     if(newpop(fd_pop, ipaddr, tport)  == -1) //retorna -1 em caso de insucesso e 0 em caso de sucesso
     {
         if(flag_d)
         {
-            printf("Falha ao enviar a montante o novo ponto de acesso...\n");
+            printf("Falha ao enviar a montante o novo ponto de acesso\n");
             printf("A aplicação irá terminar...\n");
         }
         if(fd_rs != -1) close(fd_rs);

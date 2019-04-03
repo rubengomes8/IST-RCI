@@ -25,8 +25,6 @@ queue *newElement(char *ip, char *port, int available_sessions, int index)
     head->port = NULL;
     head->next = NULL;
 
-    printf("ip %s porto %s\n", ip, port);
-
     head->ip = (char *)malloc(sizeof(char)*(strlen(ip)+1));
     if(head->ip == NULL)
     {

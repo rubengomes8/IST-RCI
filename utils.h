@@ -36,5 +36,6 @@ int validate_stream(int argc, char *argv, char* streamID, char* streamNAME, char
 
 //Compara ips e portos
 int compare_ip_and_port(char *ip_rcvd, char *port_rcvd, char *ipaddr, char *tport);
+void print_hex(char *data);
 
 #endif //UTILS_UTILS_H

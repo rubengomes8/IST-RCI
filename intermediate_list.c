@@ -164,7 +164,8 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
 }
 
 intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *ptr, int *fd_array, int tcp_sessions, int *tcp_occupied, queue **redirect_queue_head,
-        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing, intermlist **interm_tail, int index, queue *aux)
+        queue **redirect_queue_tail, int *empty_redirect_queue, int *missing, intermlist **interm_tail, int index,
+        queue *aux, int *missing_tqs)
 {
 	char *token = NULL;
 	char ip[IP_LEN+1];
@@ -189,12 +190,12 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
     token = NULL;
 
 
-
     *redirect_queue_head = send_tq_to_1_son(ip, port, fd_array, *redirect_queue_head, redirect_queue_tail, empty_redirect_queue,
             index, aux, tcp_occupied);
     //*redirect_queue_head = send_tree_query(ip, port, fd_array, tcp_sessions, tcp_occupied, *redirect_queue_head,
        //     redirect_queue_tail, empty_redirect_queue);
     (*missing)++;
+    missing_tqs[index] = missing_tqs[index] + 1;
 
 
 

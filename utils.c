@@ -373,6 +373,14 @@ int compare_ip_and_port(char *ip_rcvd, char *port_rcvd, char *ipaddr, char *tpor
         return -1;
 }
 
+void print_hex(char *data)
+{
+	while(*data != '\0')
+	{
+		printf("%02X", (unsigned int) *data++);
+	}
+}
+
 
 
 
