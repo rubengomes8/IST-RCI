@@ -11,7 +11,7 @@
 #define MAX_AUX_POPS 10
 #define POP_QUERY_TIMEOUT 100
 #define SONS_BUFFER 64
-#define SF_TIMEOUT 15
+#define SF_TIMEOUT 30
 #define DADS_BUFFER 64
 
 void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char* streamID, int is_root, char * ipaddr, char* uport, char* tport,

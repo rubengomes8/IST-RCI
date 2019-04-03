@@ -2527,7 +2527,8 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
     char *msg_readesao = NULL;
     char buffer_readesao[BUFFER_SIZE];
     int n;
-
+    int counter_tries = 0;
+    int counter_global_tries = 0;
 
 
     //Envia broken stream
@@ -2591,7 +2592,15 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                 do
                 {
                     fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 1, ipaddr);
+                    counter_tries++;
+                    if(counter_tries == MAX_TRIES && fd_udp == -2)
+                    {
+                        if(flag_d) printf("Falha ao obter um ponto de acesso, após %d tentativas, a terminar a aplicação\n", MAX_TRIES);
+                        return 1;
+                    }
+                    if(fd_udp == -2) sleep(2); //Espera 3 segundos até à nova tentativa, para não sobrecarregar o servidor de acessos
                 }while(fd_udp == -2);
+                counter_tries = 0;
 
                 if(fd_udp == -1)
                 {
@@ -2615,20 +2624,36 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                     {
                         close(fd_udp);
                         fd_udp = -1;
-                        welcome_flag = 1;
+                        welcome_flag = 0;
                     }
                     else
                     {
                         //////////////////////////// 3. Aguarda confirmação de adesão /////////////////////////////////////
                         welcome_flag = wait_for_confirmation(pop_addr, pop_tport, fd_rs, res_rs, fd_udp, *fd_pop, streamID);
                     }
+
+                    counter_tries++;
+                    if(counter_tries == MAX_TRIES && welcome_flag == 0)
+                    {
+                        if(flag_d) printf("Falha em ligar-se ao novo para a montante, após %d tentativas, a terminar a aplicação\n", MAX_TRIES);
+                        return 1;
+                    }
+                    if(welcome_flag == 0) sleep(2); //Espera 3 segundos até à nova tentativa, para não sobrecarregar o servidor de acessos
                 }
+
+                counter_global_tries++;
+                if(counter_global_tries == MAX_TRIES && *fd_pop == -1)
+                {
+                    if(flag_d) printf("Falha em readerir à stream, após %d tentativas\n", MAX_TRIES);
+                }
+
             }
             welcome_flag = 0;
             close(fd_udp);
             fd_udp = -1;
 
             send_new_pop(*fd_pop, ipaddr, tport, fd_rs, res_rs, fd_tcp_server, fd_array);
+
         }
     }
     return 0;
