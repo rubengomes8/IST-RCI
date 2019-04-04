@@ -130,11 +130,22 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
 	int tcp_sessions;
 
 	token = strtok(ptr, " ");
+	if(token == NULL)
+    {
+	    if(flag_d) printf("Mensagem mal formatada\n");
+	    return NULL;
+    }
+    token = NULL;
 
     token = strtok(NULL, ":");
     if(token == NULL)
     {
         if(flag_d) printf("Falha em obter o IP...\n");
+        return NULL;
+    }
+    if(strlen(token) > IP_LEN)
+    {
+        if(flag_d) printf("IP inválido\n\n");
         return NULL;
     }
     strcpy(ip, token);
@@ -146,9 +157,13 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
         if(flag_d) printf("Falha em obter o porto...\n");
         return NULL;
     }
+    if(strlen(token) > PORT_LEN)
+    {
+        if(flag_d) printf("Porto inválido\n\n");
+        return NULL;
+    }
     strcpy(port, token);
     token = NULL;
-
     token = strtok(NULL, "\n");
     if(token == NULL)
     {
@@ -157,6 +172,11 @@ intermlist* construct_interm_list_header(struct _intermlist *interm_list, char *
     }
     strcpy(tcp_sessions_str, token);
     tcp_sessions = atoi(tcp_sessions_str);
+    if(tcp_sessions <= 0)
+    {
+        if(flag_d) printf("Número de sessões TCP inválido\n");
+        return NULL;
+    }
 
     interm_list = newElementInterm(ip, port, tcp_sessions);
 
@@ -177,6 +197,11 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
         if(flag_d) printf("Falha em obter o IP...\n");
         return NULL;
     }
+    if(strlen(token) > IP_LEN)
+    {
+        if(flag_d) printf("IP inválido\n\n");
+        return NULL;
+    }
     strcpy(ip, token);
     token = NULL;
 
@@ -184,6 +209,11 @@ intermlist* construct_interm_list_nodes(struct _intermlist *interm_list, char *p
     if(token == NULL)
     {
         if(flag_d) printf("Falha em obter o porto...\n");
+        return NULL;
+    }
+    if(strlen(token) > PORT_LEN)
+    {
+        if(flag_d) printf("Porto inválido\n\n");
         return NULL;
     }
     strcpy(port, token);

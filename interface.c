@@ -705,6 +705,12 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                 }
                                 else if(aux_buffer_sons[i][nread_sons[i] - 1] == '\n')
                                 {
+                                    //Se a mensagem estiver mal formatada aqui recebemos NULL
+                                    //No entento isso não devia acontecer, porque perdemos o resto da lista e não lhe podemos dar free
+                                    //É ainda preciso decrementar missing e pôr missing_tqs[i] = 0
+                                    //FIX ME
+                                    //Ideia, criar ponteiro auxiliar. Se não for NULL, interm_list[i]=auxiliar
+                                    //Se for NULL, liberta-se interm_list[i] e desliga-se o filho
                                     interm_list[i] = construct_interm_list_nodes(interm_list[i], aux_buffer_sons[i], fd_array,
                                             tcp_sessions, &tcp_occupied, &redirect_queue_head, &redirect_queue_tail,
                                             &empty_redirect_queue, &missing, &(interm_tail[i]), i, aux, missing_tqs);

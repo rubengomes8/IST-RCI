@@ -292,7 +292,21 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
 
     //Extraccção de pop_addr e pop_tport da mensagem recebida msg_rcv
     token = strtok(msg_rcv, " ");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha ao ler a mensagem\n");
+        free(timeout);
+        return -1;
+    }
+    token = NULL;
     token = strtok(NULL, " ");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha ao ler a mensagem\n");
+        free(timeout);
+        return -1;
+    }
+    token = NULL;
     token = strtok(NULL, ":");
     if(token == NULL)
     {
@@ -304,6 +318,7 @@ int popreq(int fd_udp, struct addrinfo *res_udp, char *pop_addr, char *pop_tport
         return -1;
     }
     strcpy(pop_addr, token);
+    token = NULL;
 
     token = strtok(NULL, "\n");
     if(token == NULL)
@@ -522,6 +537,12 @@ int get_redirect(char *pop_addr, char *pop_tport, char *msg)
 
 
     token = strtok(msg, " ");
+    if(token == NULL)
+    {
+        if(flag_d) printf("Falha ao obter o endereço de redirecionamento\n");
+        return -1;
+    }
+
 
     token = NULL;
     token = strtok(NULL, ":");
@@ -632,7 +653,6 @@ int receive_pop_reply(char *ptr, char *ip, char *port, int *available_sessions)
 
     token = strtok(NULL, " ");//query ID
     if (token == NULL) return -1;
-
 
     //conversão da string para hexa
     query_id = (int)strtol(token, NULL, 16);

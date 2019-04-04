@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
 
     int query_id = 0;
 
+
     //Lê e verifica os restantes argumentos
     has_stream = arguments_reading(argc, argv, ipaddr, tport, uport, rsaddr, rsport, &tcp_sessions, &bestpops,
             &tsecs, &flag_h, streamID, streamNAME, streamIP, streamPORT);
