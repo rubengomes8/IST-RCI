@@ -2668,6 +2668,7 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                 if(counter_global_tries == MAX_TRIES && *fd_pop == -1)
                 {
                     if(flag_d) printf("Falha em readerir à stream, após %d tentativas\n", MAX_TRIES);
+                    return 1;
                 }
 
             }

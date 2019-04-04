@@ -286,7 +286,7 @@ int arguments_reading(int argc, char *argv[], char ipaddr[], char tport[], char 
 			}
 			else
 			{
-				printf("Evocação correta: <-s ip[:port]>\n");
+				printf("Invocação correta: <-s ip[:port]>\n");
 				exit(-1);
 			}
 		}
