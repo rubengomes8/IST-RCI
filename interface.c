@@ -595,7 +595,7 @@ void interface_root(int fd_ss, int fd_rs, struct addrinfo *res_rs, char *streamI
                                             &redirect_queue_tail, &empty_redirect_queue, NULL, 1);
                                     missing -= missing_tqs[i];
                                     missing_tqs[i] = 0;
-
+                                    continue;
                                     //Pensar o que fazer aqui
                                 }
 
