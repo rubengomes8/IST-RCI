@@ -879,7 +879,7 @@ int send_tree_reply(char *ip, char *tport, int tcp_sessions, int tcp_occupied, q
     struct _queue* redirect_aux = NULL;
     char ip_aux[IP_LEN + 1];
     char port_aux[PORT_LEN + 1];
-    char ip_port[IP_LEN + PORT_LEN + 2] = "\0"; // 2 -> ':' e '\n'
+    char ip_port[IP_LEN + PORT_LEN + 4] = "\0"; // 2 -> ':' e '\n'
     int n;
 
     ip_aux[0] = '\0';
