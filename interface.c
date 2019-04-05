@@ -2661,7 +2661,39 @@ int readesao(struct addrinfo *res_rs, int fd_rs, char *streamID, char *rsaddr, c
                         if(flag_d) printf("Falha em ligar-se ao novo para a montante, após %d tentativas, a terminar a aplicação\n", MAX_TRIES);
                         return 1;
                     }
-                    if(welcome_flag == 0) sleep(2); //Espera 3 segundos até à nova tentativa, para não sobrecarregar o servidor de acessos
+                    //if(welcome_flag == 0) sleep(2); //Espera 3 segundos até à nova tentativa, para não sobrecarregar o servidor de acessos
+                    /***********************************************************************************************************************/
+                    if(welcome_flag == 0){
+
+                        do
+                        {
+                            fd_udp = get_access_point(rasaddr, rasport, &res_udp, fd_rs, res_rs, pop_addr, pop_tport, 1, ipaddr);
+                            counter_tries++;
+                            if(counter_tries == MAX_TRIES && fd_udp == -2)
+                            {
+                                if(flag_d) printf("Falha ao obter um ponto de acesso, após %d tentativas, a terminar a aplicação\n", MAX_TRIES);
+                                return 1;
+                            }
+                            if(fd_udp == -2) sleep(2); //Espera 3 segundos até à nova tentativa, para não sobrecarregar o servidor de acessos
+                        }while(fd_udp == -2);
+                        counter_tries = 0;
+
+                        if(fd_udp == -1)
+                        {
+                            //falha na comunicação com o servidor de acessos. Podes significar que a raiz saiu
+                            //Vamos tentar uma nova readesão
+                            n = readesao(res_rs, fd_rs, streamID, rsaddr, rsport, ipaddr, uport, redirect_queue_head, redirect_queue_tail,
+                                    fd_array, tcp_occupied, tcp_sessions, empty_redirect_queue, is_root, pop_addr, pop_tport,
+                                    fd_pop, streamIP, streamPORT, tport, fd_tcp_server, bestpops, redirect_aux, tsecs,
+                                    aux_buffer_sons, aux_ptr_sons, nread_sons, is_flowing, send_broken, query_id);
+
+                            if(n == 0) return 0;
+                            else if(n == 1) return 1;
+                        }
+
+                    }
+
+                    /***********************************************************************************************************************/
                 }
 
                 counter_global_tries++;
